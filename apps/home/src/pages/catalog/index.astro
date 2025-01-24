@@ -1,0 +1,13 @@
+---
+import { CatalogPage } from '@/page-layouts';
+import { productService } from '@/services';
+import BaseHead from '@/templates/BaseHead.astro';
+import { AppConfig } from '@/utils';
+
+const { title, description } = AppConfig;
+const productsResponse = await productService.getProducts();
+---
+
+<BaseHead isPublic={true} head={{ title, description }}>
+  <CatalogPage listProduct={productsResponse.data ? productsResponse.data : []} client:load />
+</BaseHead>

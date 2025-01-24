@@ -1,0 +1,13 @@
+---
+import { EditProduct } from '@/page-layouts';
+import BaseSideBar from '@/templates/BaseSideBar.astro';
+import { AppConfig } from '@/utils';
+
+const { title, description } = AppConfig;
+
+const { id } = Astro.params;
+---
+
+<BaseSideBar head={{ title, description }}>
+  <EditProduct client:load paramId={id} />
+</BaseSideBar>

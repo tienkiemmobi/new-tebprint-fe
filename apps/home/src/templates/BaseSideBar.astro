@@ -1,0 +1,28 @@
+---
+import 'react-toastify/dist/ReactToastify.css';
+
+import type { BaseProps } from 'shared';
+import { TebToastContainer } from 'ui';
+
+import { SidebarSetting } from '@/components';
+
+import BaseHead from './BaseHead.astro';
+
+const currentPage = Astro.url.pathname;
+const {
+  head: { title, description },
+} = Astro.props as BaseProps;
+---
+
+<BaseHead head={{ title, description }}>
+  <SidebarSetting client:load currentPage={currentPage} />
+  <div
+    class="ml-0 mt-[78px] max-h-0 min-h-[calc(100vh-78px)] w-full overflow-y-auto bg-[#f7f7f7] lg:ml-64 lg:w-[calc(100vw-256px)]"
+    transition:animate="slide"
+  >
+    <div class="mx-auto w-full p-4">
+      <slot />
+    </div>
+  </div>
+  <TebToastContainer client:load />
+</BaseHead>

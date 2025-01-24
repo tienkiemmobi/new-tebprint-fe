@@ -1,0 +1,107 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* #ffffff */
+    --background: 0 0% 100%;
+    /* #0c0a09 */
+    --foreground: 20 14.3% 4.1%;
+
+    /* #ffffff */
+    --card: 0 0% 100%;
+    /* #0c0a09 */
+    --card-foreground: 20 14.3% 4.1%;
+
+    /* #ffffff */
+    --popover: 0 0% 100%;
+    /* #0c0a09 */
+    --popover-foreground: 20 14.3% 4.1%;
+
+    /* #f7b017 */
+    --primary: 41 93% 53%;
+    /* #fafaf9 */
+    --primary-foreground: 60 9.1% 97.8%;
+
+    /* #f5f5f4 */
+    --secondary: 60 4.8% 95.9%;
+    /* #1c1917 */
+    --secondary-foreground: 24 9.8% 10%;
+
+    /* #f5f5f4 */
+    --muted: 60 4.8% 95.9%;
+    /* #78716c */
+    --muted-foreground: 25 5.3% 44.7%;
+
+    /* #f5f5f4 */
+    --accent: 60 4.8% 95.9%;
+    /* #1c1917 */
+    --accent-foreground: 24 9.8% 10%;
+
+    /* #ef4444 */
+    --destructive: 0 84.2% 60.2%;
+    /* #fafaf9 */
+    --destructive-foreground: 60 9.1% 97.8%;
+
+    /* #e7e5e4 */
+    --border: 20 5.9% 90%;
+
+    /* #e7e5e4 */
+    --input: 20 5.9% 90%;
+
+    /* #f97316 */
+    --ring: 24.6 95% 53.1%;
+
+    --radius: 0.5rem;
+
+    /* #f7b017 Teb logo color */
+    --teb: 41 93% 53%;
+  }
+
+  .dark {
+    --background: 20 14.3% 4.1%;
+    --foreground: 60 9.1% 97.8%;
+    --card: 20 14.3% 4.1%;
+    --card-foreground: 60 9.1% 97.8%;
+    --popover: 20 14.3% 4.1%;
+    --popover-foreground: 60 9.1% 97.8%;
+    --primary: 20.5 90.2% 48.2%;
+    --primary-foreground: 60 9.1% 97.8%;
+    --secondary: 12 6.5% 15.1%;
+    --secondary-foreground: 60 9.1% 97.8%;
+    --muted: 12 6.5% 15.1%;
+    --muted-foreground: 24 5.4% 63.9%;
+    --accent: 12 6.5% 15.1%;
+    --accent-foreground: 60 9.1% 97.8%;
+    --destructive: 0 72.2% 50.6%;
+    --destructive-foreground: 60 9.1% 97.8%;
+    --border: 12 6.5% 15.1%;
+    --input: 12 6.5% 15.1%;
+    --ring: 20.5 90.2% 48.2%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+}
+
+@layer utilities {
+  @layer responsive {
+    /* Hide scrollbar for Chrome, Safari and Opera */
+    .no-scrollbar::-webkit-scrollbar {
+      display: none;
+    }
+
+    /* Hide scrollbar for IE, Edge and Firefox */
+    .no-scrollbar {
+      -ms-overflow-style: none; /* IE and Edge */
+      scrollbar-width: none; /* Firefox */
+    }
+  }
+}

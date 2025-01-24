@@ -1,0 +1,43 @@
+# build output
+dist/
+.output/
+
+# dependencies
+node_modules/
+
+# logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# environment variables
+.env*.local
+
+# macOS-specific files
+.DS_Store
+
+# misc
+*.pem
+Thumbs.db
+.history
+
+# turbo
+.turbo
+
+# vercel
+.vercel
+
+# Teb
+.env
+.vscode
+yarn.lock
+.cspellcache
+.eslintcache
+/test-results/
+/playwright-report/
+/blob-report/
+/playwright/.cache/
+test/assets/
+
+dist-prod/

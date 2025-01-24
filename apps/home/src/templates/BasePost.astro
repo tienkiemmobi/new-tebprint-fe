@@ -1,0 +1,26 @@
+---
+import { CTA } from '@/layouts';
+import Base from '@/templates/Base.astro';
+import { AppConfig } from '@/utils';
+
+type Frontmatter = {
+  title: string;
+  description: string;
+  pubDate: string;
+  imgSrc: string;
+  imgAlt: string;
+  draft: boolean;
+};
+
+export type Props = {
+  content: Frontmatter;
+};
+
+const { content } = Astro.props as Props;
+const title = `${content.title} - ${AppConfig.site_name}`;
+---
+
+<Base head={{ title, description: content.description }}>
+  <slot />
+  <CTA />
+</Base>

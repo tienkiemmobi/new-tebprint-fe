@@ -1,0 +1,13 @@
+---
+import { Products } from '@/page-layouts';
+import { productService } from '@/services';
+import BaseHead from '@/templates/BaseHead.astro';
+import { AppConfig } from '@/utils';
+
+const { title, description } = AppConfig;
+const productsResponse = await productService.getProducts();
+---
+
+<BaseHead head={{ title, description }} isPublic={true}>
+  <Products listProduct={productsResponse.success && productsResponse.data ? productsResponse.data : []} client:load />
+</BaseHead>

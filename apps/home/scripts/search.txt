@@ -1,0 +1,15 @@
+import.*from.*'\.
+
+import.*from.*'.*/
+
+import.*from.*'.*\./.*components
+
+import.*from.*'ui/
+
+import.*from.*'@/interfaces/
+
+import.*from.*'@/store/
+
+import.*from.*'@/constants/
+
+import.*from.*'@/utils/

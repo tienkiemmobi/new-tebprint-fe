@@ -1,0 +1,21 @@
+---
+import 'ui/css/globals.css';
+
+import { RegisterPage } from '@/page-layouts';
+import Base from '@/templates/BaseEmpty.astro';
+import { AppConfig } from '@/utils';
+
+// if (Astro.cookies.has('token')) {
+//   if (Astro.cookies.get('token')) {
+//     return Astro.redirect('/home');
+//   }
+// }
+
+export const prerender = true;
+
+const { title, description } = AppConfig;
+---
+
+<Base head={{ title, description }}>
+  <RegisterPage client:load />
+</Base>

@@ -1,0 +1,20 @@
+#interactive.viewport {
+  max-width: 100%;
+  width: 480px;
+  height: auto;
+  display: flex;
+  justify-content: center;
+}
+
+#interactive.viewport canvas,
+video {
+  width: 480px;
+  height: 360px;
+}
+
+#interactive.viewport canvas.drawingBuffer,
+video.drawingBuffer {
+  width: 480px;
+  height: 360px;
+  display: none;
+}

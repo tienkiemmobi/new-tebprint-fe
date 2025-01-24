@@ -1,0 +1,42 @@
+{
+  "private": true,
+  "scripts": {
+    "build": "turbo run build",
+    "dev": "turbo run dev",
+    "lint": "turbo run lint",
+    "lint:fix": "turbo run lint:fix",
+    "lint:vercel": "turbo run lint && turbo run build-types && mkdir dist || true && touch ./dist/index.html && echo 'Done'",
+    "format": "prettier --write \"**/*.{ts,tsx,md}\"",
+    "build-types": "turbo run build-types",
+    "dev:home": "turbo run dev --filter ./apps/home",
+    "dev:fac": "turbo run dev --filter ./apps/factory",
+    "build:home": "turbo run build --filter ./apps/home",
+    "build:fac": "turbo run build --filter ./apps/factory",
+    "start:home": "pnpm --filter home preview ",
+    "start:fac": "pnpm --filter factory preview",
+    "spell": "cspell . --no-progress --cache",
+    "_postinstall": "manypkg check",
+    "prepare": "husky install"
+  },
+  "packageManager": "pnpm@8.6.10",
+  "dependencies": {
+    "@manypkg/cli": "^0.21.0",
+    "@radix-ui/react-alert-dialog": "^1.0.4",
+    "@radix-ui/react-dialog": "^1.0.4",
+    "@types/react": "^18.2.33",
+    "commitlint": "^18.4.1",
+    "eslint": "^8.49.0",
+    "eslint-config-custom": "0.0.0",
+    "husky": "^8.0.3",
+    "lint-staged": "^14.0.0",
+    "prettier": "^3.0.3",
+    "turbo": "latest"
+  },
+  "resolutions": {
+    "@types/react": "18.2.33"
+  },
+  "devDependencies": {
+    "@cspell/dict-vi-vn": "^3.0.0",
+    "cspell": "^8.0.0"
+  }
+}

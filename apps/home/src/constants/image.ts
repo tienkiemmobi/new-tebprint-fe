@@ -1,0 +1,1 @@
+export const MARK_AS_PREVIEW_IMAGE = 'PREVIEW_IMAGE';

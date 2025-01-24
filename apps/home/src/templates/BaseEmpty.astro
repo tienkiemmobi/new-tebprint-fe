@@ -1,0 +1,24 @@
+---
+import type { BaseProps } from 'shared';
+
+import { AppConfig } from '@/utils';
+
+const {
+  head: { title, description },
+} = Astro.props as BaseProps;
+---
+
+<html lang="en" data-theme="light">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>{title}</title>
+    <meta name="description" content={description} />
+    <meta name="author" content={AppConfig.author} />
+
+    <link rel="icon" type="image/x-icon" href="/favicon.ico" />
+  </head>
+  <body>
+    <slot />
+  </body>
+</html>

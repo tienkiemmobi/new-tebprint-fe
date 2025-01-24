@@ -1,0 +1,28 @@
+---
+import { ProductDetail } from '@/page-layouts';
+import { productService } from '@/services';
+import BaseHead from '@/templates/BaseHead.astro';
+import { AppConfig } from '@/utils';
+
+const { title, description } = AppConfig;
+
+const { id } = Astro.params;
+
+const allProducts = {
+  data: [],
+}; // await productService.getProducts();
+const productDetail = await productService.getProduct(id || '');
+console.log('🚀 ~ productDetail:', productDetail.variants);
+
+if (!productDetail || !productDetail.data || !allProducts || !allProducts.data) {
+  Astro.redirect('/404');
+}
+---
+
+<BaseHead head={{ title, description }} isPublic={true}>
+  {
+    productDetail && productDetail.data && allProducts && allProducts.data && (
+      <ProductDetail relatedProductsList={allProducts.data} productDetail={productDetail.data} client:load />
+    )
+  }
+</BaseHead>

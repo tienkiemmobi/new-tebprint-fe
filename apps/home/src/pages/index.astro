@@ -1,0 +1,918 @@
+---
+import '@splidejs/splide/css';
+
+// cspell:disable
+import { ChevronRight, MoveUp } from 'lucide-react';
+import { StarIcon } from 'ui';
+
+import { HomeForm } from '@/page-layouts';
+import { productService } from '@/services';
+import Base from '@/templates/Base.astro';
+import { AppConfig } from '@/utils';
+
+const { title } = AppConfig;
+const { description } = AppConfig;
+const productsRepsonse = await productService.getProducts({ pageIndex: 0, pageSize: 6 });
+const products = productsRepsonse?.data;
+export const prerender = true;
+---
+
+<style is:global>
+  #sell-online:checked #pic-sell {
+    display: block;
+  }
+
+  #order-myself:checked #pic-myself {
+    display: block;
+  }
+
+  .splide__pagination {
+    bottom: -2.5em !important;
+    left: 0;
+    padding: 0 1em;
+    position: absolute;
+    right: 0;
+    z-index: 1;
+  }
+
+  .splide__pagination__page {
+    background: transparent;
+    border: 0;
+    border-radius: 50%;
+    box-shadow: inset 0 0 0 1px #555;
+    color: transparent;
+    content: '';
+    cursor: pointer;
+    display: block;
+    font-size: 0;
+    height: 12px;
+    line-height: 0;
+    margin: 4px;
+    outline: none;
+    width: 12px;
+  }
+
+  .splide__pagination__page.is-active {
+    background-color: #555 !important;
+  }
+
+  .splide__arrow {
+    cursor: pointer !important;
+    border: none !important;
+    background: none !important;
+    padding: 10px 20px !important;
+    color: #b1b1b1 !important;
+    width: auto !important;
+    height: auto !important;
+    display: block !important;
+  }
+
+  .splide__arrow svg {
+    fill: none !important;
+    width: auto !important;
+    height: auto !important;
+  }
+</style>
+
+<Base isPublic={true} head={{ title, description }} isSmooth={true}>
+  <div class="mt-[79px] min-h-[calc(100vh-79px)] w-full scroll-smooth">
+    <div class="w-full">
+      <div class="relative flex flex-wrap" id="back-to-top">
+        <div
+          class="flex w-full px-0 lg:ml-[41.6666666667%] lg:max-w-[58.3333333333%] lg:shrink-0 lg:grow-0 lg:basis-[58.3333333333%] lg:pl-10">
+          <div id="pic-sell" class="block">
+            <picture class="w-full">
+              <source media="(min-width: 1200px)" srcset="https://i.imgur.com/7uvUeIM.jpg" />
+              <source media="(min-width: 1025px)" srcset="https://i.imgur.com/ODJeVIt.jpg" />
+              <source media="(min-width: 539px)" srcset="https://i.imgur.com/6GRE2eI.jpg" />
+              <img
+                src="https://i.imgur.com/be6I0bB.jpg"
+                class="block h-auto w-full max-w-full"
+                width="390"
+                height="220"
+                alt="custom product collection"
+              />
+            </picture>
+          </div>
+          <div id="pic-myself" class="hidden">
+            <picture class="w-full">
+              <source media="(min-width: 1200px)" srcset="https://i.imgur.com/ait2AYS.jpg" />
+              <source media="(min-width: 1025px)" srcset="https://i.imgur.com/ad6G0go.jpg" />
+              <source media="(min-width: 539px)" srcset="https://i.imgur.com/ddDWF0J.jpg" />
+              <img
+                src="https://i.imgur.com/ZR1uXQd.jpg"
+                class="block h-auto w-full max-w-full"
+                width="390"
+                height="220"
+                alt="man posing in custom t-shirt near plants"
+              />
+            </picture>
+          </div>
+        </div>
+
+        <div
+          class="inset-x-0 m-auto flex h-full w-full max-w-[528px] items-center px-2 md:max-w-[744px] lg:absolute lg:max-w-[960px] xl:max-w-[1152px]">
+          <div
+            class="self-start px-0 lg:max-w-[50%] lg:shrink-0 lg:grow-0 lg:basis-[50%] lg:pr-[64px] xl:max-w-[41.6666666667%] xl:shrink-0 xl:grow-0 xl:basis-[41.6666666667%]">
+            <div class="mb-8 mt-6 text-center lg:mt-4 lg:text-left">
+              <h1 class="text-4xl font-bold leading-[46px] tracking-[-1px]" id="sell-title">
+                Sell custom products online with Tebprint
+              </h1>
+              <!-- <h1 class="hidden text-4xl font-bold leading-[46px] tracking-[-1px]">Create custom products online</h1> -->
+            </div>
+
+            <div
+              id="top-check"
+              class="relative mx-auto min-h-[56px] max-w-[340px] select-none rounded-[5px] bg-[#e5e5e5] shadow lg:mx-0">
+              <input type="radio" name="name-1234" id="sell-online" class="peer/sell hidden" checked />
+              <input type="radio" name="name-1234" id="order-myself" class="peer/myself hidden" />
+              <div class="absolute left-0 top-0 w-1/2 p-[2px] pr-[1px] transition-all peer-checked/myself:left-[50%]">
+                <div class="min-h-[52px] rounded-[5px] bg-background shadow"></div>
+              </div>
+              <label
+                for="sell-online"
+                class="absolute left-0 top-0 block min-h-[52px] w-1/2 cursor-pointer p-[2px] text-[14px] font-bold leading-[25px] text-[#222]">
+                <div class="pointer-events-none select-none text-center font-bold leading-[52px]">Sell online</div>
+              </label>
+              <label
+                for="order-myself"
+                class="absolute left-[50%] top-0 block min-h-[52px] w-1/2 cursor-pointer p-[2px] text-[14px] font-bold leading-[25px] text-[#222]">
+                <div class="pointer-events-none select-none text-center font-bold leading-[52px]">Order for myself</div>
+              </label>
+            </div>
+
+            <div class="mt-6 text-center lg:mt-8 lg:text-left">
+              <h2 class="mb-8 text-2xl font-normal leading-[34px] text-[#555]" id="sell-description">
+                Build and grow your ecommerce brand with premium products
+              </h2>
+              <a
+                href="#"
+                class="inline-block h-[56px] min-w-[112px] cursor-pointer select-none whitespace-nowrap rounded-[5px] border bg-destructive px-6 text-center text-lg font-bold leading-[54px] text-background no-underline"
+                id="sell-action"
+                >Let's go
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="mb-[48px] mt-[64px] w-full bg-[#161824]">
+        <div
+          class="mx-auto flex w-full max-w-[528px] flex-wrap px-2 md:max-w-[744px] lg:max-w-[960px] xl:max-w-[1152px]">
+          <div class="flex w-full items-center overflow-hidden lg:max-w-[41.6666666667%] lg:shrink-0 lg:grow-0">
+            <img
+              src="https://i.imgur.com/h6iUJOU.jpg"
+              alt="Promo block image"
+              loading="lazy"
+              class="mt-[64px] align-middle md:mt-0"
+              style="height:380px"
+            />
+          </div>
+
+          <div
+            class="xg:pl-4 w-full pl-2 text-background lg:max-w-[58.3333333333%] lg:shrink-0 lg:grow-0 lg:basis-[58.3333333333%] lg:pl-3">
+            <div
+              class="mb-2 pt-[64px] text-left text-[32px] font-bold leading-10 tracking-[-1px] md:text-[36px] md:leading-[46px]">
+              Earn more as a Tebprint member
+            </div>
+            <div class="text-2xl font-normal leading-[34px]">Reach sales goals and get exclusive discounts</div>
+            <div class="mb-8 mt-4 max-w-[640px] text-base">
+              <p class="mb-[10px]">
+                Based on your sales, you might be a member of Tebprint Growth or Tebprint Business.
+              </p>
+              <p class="mb-[10px]"><strong>You can get:</strong></p>
+              <ul class="mb-[10px] list-disc">
+                <li class="ml-9">Product discounts of up to 33%</li>
+                <li class="ml-9">Sample order discounts of 25%</li>
+                <li class="ml-9">Product branding for up to 9% off</li>
+                <li class="ml-9">Free digitization</li>
+              </ul>
+              <p class="mb-[10px]"><strong>Don’t qualify for memberships yet?</strong></p>
+              <p class="mb-[10px]">Sign up for early access to get lower prices and more profit.</p>
+            </div>
+            <div class="mb-[64px] mt-4">
+              <a
+                href="#"
+                class="inline-block h-[40px] w-full min-w-[112px] cursor-pointer select-none whitespace-nowrap rounded-[5px] bg-destructive px-6 text-center text-base font-bold leading-[38px] text-background no-underline lg:w-fit"
+                >Learn more
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="w-full text-[#222]">
+        <div
+          class="mx-auto flex w-full max-w-[528px] flex-col justify-between gap-6 p-4 md:max-w-[744px] md:flex-row lg:max-w-[960px] xl:max-w-[1152px]">
+          <div class="flex">
+            <img
+              class="h-[56px] w-[56px] align-middle"
+              src="https://i.imgur.com/U5npthn.jpg"
+              alt="globe"
+              loading="lazy"
+            />
+            <div class="ml-4 mt-2">
+              Design <strong>authentic apparel</strong> and unique home &amp; living decor
+            </div>
+          </div>
+          <div class="flex">
+            <img
+              class="h-[56px] w-[56px] align-middle"
+              src="https://i.imgur.com/gNEoU6H.jpg"
+              alt="globe"
+              loading="lazy"
+            />
+            <div class="ml-4 mt-2">
+              Choose from our vast catalog of 330 <strong>premium products</strong>
+            </div>
+          </div>
+          <div class="flex">
+            <img
+              class="h-[56px] w-[56px] align-middle"
+              src="https://i.imgur.com/zaN2Dho.jpg"
+              alt="globe"
+              loading="lazy"
+            />
+            <div class="ml-4 mt-2">
+              Order products for your team, event, or organization and <strong>save up to 55%</strong>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="relative">
+        <div
+          class="mx-auto mb-2 mt-[64px] w-full max-w-[528px] px-2 md:max-w-[744px] lg:max-w-[960px] xl:max-w-[1152px]">
+          <div class="mb-10 w-full text-center">
+            <h2 class="mb-2 text-4xl font-bold leading-[46px] tracking-[-1px]">
+              Hundreds of thousands of merchants trust us with their business
+            </h2>
+            <p class="text-2xl font-normal leading-[34px] text-[#555]">
+              Join them and get the quality products and services you deserve
+            </p>
+          </div>
+
+          <div class="grid grid-cols-2 gap-4 lg:grid-cols-3 xl:grid-cols-6">
+            <div class="mb-6">
+              <img
+                src="https://i.imgur.com/KkuXBbJ.jpg"
+                loading="lazy"
+                alt="Coca Cola"
+                class="mx-auto h-[95px] w-full"
+                style="max-height: 95px;"
+              />
+            </div>
+            <div class="mb-6">
+              <img
+                src="https://i.imgur.com/PkJt3se.jpg"
+                loading="lazy"
+                alt="Coca Cola"
+                class="mx-auto h-[95px] w-full"
+                style="max-height: 95px;"
+              />
+            </div>
+            <div class="mb-6">
+              <img
+                src="https://i.imgur.com/yQbHhZT.jpg"
+                loading="lazy"
+                alt="Coca Cola"
+                class="mx-auto h-[95px] w-full"
+                style="max-height: 95px;"
+              />
+            </div>
+            <div class="mb-6">
+              <img
+                src="https://i.imgur.com/L6FHizo.jpg"
+                loading="lazy"
+                alt="Coca Cola"
+                class="mx-auto h-[95px] w-full"
+                style="max-height: 95px;"
+              />
+            </div>
+            <div class="mb-6">
+              <img
+                src="https://i.imgur.com/lIWERTn.jpg"
+                loading="lazy"
+                alt="Coca Cola"
+                class="mx-auto h-[95px] w-full"
+                style="max-height: 95px;"
+              />
+            </div>
+            <div class="mb-6">
+              <img
+                src="https://i.imgur.com/3UxfoWA.jpg"
+                loading="lazy"
+                alt="Coca Cola"
+                class="mx-auto h-[95px] w-full"
+                style="max-height: 95px;"
+              />
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="mt-4 min-h-[200px]">
+        <div class="mx-auto w-full max-w-[528px] px-2 pt-8 md:max-w-[744px] lg:max-w-[960px] xl:max-w-[1152px]">
+          <h2
+            class="justify-center text-center text-[32px] font-bold leading-10 tracking-[-1px] md:text-[36px] md:leading-[46px]">
+            We're not the cheapest. But our superior quality will keep your customers coming back again and again.
+          </h2>
+
+          <div class="mt-5 flex flex-col justify-center md:flex-row">
+            <div class="mx-6 text-center">
+              <div class="mx-auto mb-5 flex items-center space-x-1">
+                <StarIcon className="h-8 w-8 text-yellow-300" />
+                <StarIcon className="h-8 w-8 text-yellow-300" />
+                <StarIcon className="h-8 w-8 text-yellow-300" />
+                <StarIcon className="h-8 w-8 text-yellow-300" />
+                <StarIcon className="h-8 w-8 text-gray-300 dark:text-gray-500" />
+              </div>
+              <img src="https://i.imgur.com/M0fgCxh.jpg" alt="Shopify Logo" class="mx-auto" />
+              <p class="mt-2 text-base text-[#555]">4.6 / 5 average on Shopify</p>
+            </div>
+
+            <div class="mx-6 text-center">
+              <div class="mx-auto mb-5 flex items-center space-x-1">
+                <StarIcon className="h-8 w-8 text-yellow-300" />
+                <StarIcon className="h-8 w-8 text-yellow-300" />
+                <StarIcon className="h-8 w-8 text-yellow-300" />
+                <StarIcon className="h-8 w-8 text-yellow-300" />
+                <StarIcon className="h-8 w-8 text-gray-300 dark:text-gray-500" />
+              </div>
+              <img src="https://i.imgur.com/c3o6b5i.jpg" alt="Trustpilot Logo" class="mx-auto" />
+              <p class="mt-2 text-base text-[#555]">4.5 / 5 average on Trustpilot</p>
+            </div>
+          </div>
+
+          <div class="relative mt-10">
+            <div class="splide select-none" id="splide-ratings">
+              <div class="splide__track">
+                <ul class="splide__list">
+                  <div class="splide__slide rounded-[10px] bg-[#fafafa] p-6">
+                    <div class="mx-auto flex items-center space-x-1">
+                      <StarIcon className="h-5 w-5 text-yellow-300" />
+                      <StarIcon className="h-5 w-5 text-yellow-300" />
+                      <StarIcon className="h-5 w-5 text-yellow-300" />
+                      <StarIcon className="h-5 w-5 text-yellow-300" />
+                      <StarIcon className="h-5 w-5 text-gray-300 dark:text-gray-500" />
+                    </div>
+                    <p class="mt-2 text-[14px] font-normal leading-[22px] text-[#222]"><strong>Stu</strong></p>
+                    <h3 class="mt-4 text-[24px] font-bold leading-[34px] text-[#222]">
+                      Easy Integration with Etsy, store setup in minutes!
+                    </h3>
+                    <p class="mt-3 text-[14px] leading-[22px] text-[#555]">
+                      Very easy integration with my Etsy store, products created and listed in minutes! <br />
+                      <a href="#">Read more</a>
+                    </p>
+                    <p class="mt-4 text-[14px] leading-[22px] text-[#222]">
+                      <strong>Date of experience:</strong>
+                       May 4, 2023
+                    </p>
+                  </div>
+                  <div class="splide__slide rounded-[10px] bg-[#fafafa] p-6">
+                    <div class="mx-auto flex items-center space-x-1">
+                      <StarIcon className="h-5 w-5 text-yellow-300" />
+                      <StarIcon className="h-5 w-5 text-yellow-300" />
+                      <StarIcon className="h-5 w-5 text-yellow-300" />
+                      <StarIcon className="h-5 w-5 text-yellow-300" />
+                      <StarIcon className="h-5 w-5 text-gray-300 dark:text-gray-500" />
+                    </div>
+                    <p class="mt-2 text-[14px] font-normal leading-[22px] text-[#222]"><strong>Justin View</strong></p>
+                    <h3 class="mt-4 text-[24px] font-bold leading-[34px] text-[#222]">
+                      I enjoy the ease in which I can drag…
+                    </h3>
+                    <p class="mt-3 text-[14px] leading-[22px] text-[#555]">
+                      I enjoy the ease in which I can drag and import my designs. The user interface is fluid and
+                      dynamic. I want more color options so that I can create outfits(matching shirt and shorts) but
+                      currently I'm forced to color compliment. There needs to be more options for embroidery area/size
+                      as well being a <br />
+                      <a href="#">Read more</a>
+                    </p>
+                    <p class="mt-4 text-[14px] leading-[22px] text-[#222]">
+                      <strong>Date of experience:</strong>
+                       May 4, 2023
+                    </p>
+                  </div>
+                  <div class="splide__slide rounded-[10px] bg-[#fafafa] p-6">
+                    <div class="mx-auto flex items-center space-x-1">
+                      <StarIcon className="h-5 w-5 text-yellow-300" />
+                      <StarIcon className="h-5 w-5 text-yellow-300" />
+                      <StarIcon className="h-5 w-5 text-yellow-300" />
+                      <StarIcon className="h-5 w-5 text-yellow-300" />
+                      <StarIcon className="h-5 w-5 text-gray-300 dark:text-gray-500" />
+                    </div>
+                    <p class="mt-2 text-[14px] font-normal leading-[22px] text-[#222]"><strong>Stu</strong></p>
+                    <h3 class="mt-4 text-[24px] font-bold leading-[34px] text-[#222]">
+                      Easy Integration with Etsy, store setup in minutes!
+                    </h3>
+                    <p class="mt-3 text-[14px] leading-[22px] text-[#555]">
+                      Very easy integration with my Etsy store, products created and listed in minutes! <br />
+                      <a href="#">Read more</a>
+                    </p>
+                    <p class="mt-4 text-[14px] leading-[22px] text-[#222]">
+                      <strong>Date of experience:</strong>
+                       May 4, 2023
+                    </p>
+                  </div>
+                  <div class="splide__slide rounded-[10px] bg-[#fafafa] p-6">
+                    <div class="mx-auto flex items-center space-x-1">
+                      <StarIcon className="h-5 w-5 text-yellow-300" />
+                      <StarIcon className="h-5 w-5 text-yellow-300" />
+                      <StarIcon className="h-5 w-5 text-yellow-300" />
+                      <StarIcon className="h-5 w-5 text-yellow-300" />
+                      <StarIcon className="h-5 w-5 text-gray-300 dark:text-gray-500" />
+                    </div>
+                    <p class="mt-2 text-[14px] font-normal leading-[22px] text-[#222]"><strong>Stu</strong></p>
+                    <h3 class="mt-4 text-[24px] font-bold leading-[34px] text-[#222]">
+                      Easy Integration with Etsy, store setup in minutes!
+                    </h3>
+                    <p class="mt-3 text-[14px] leading-[22px] text-[#555]">
+                      Very easy integration with my Etsy store, products created and listed in minutes! <br />
+                      <a href="#">Read more</a>
+                    </p>
+                    <p class="mt-4 text-[14px] leading-[22px] text-[#222]">
+                      <strong>Date of experience:</strong>
+                       May 4, 2023
+                    </p>
+                  </div>
+                  <div class="splide__slide rounded-[10px] bg-[#fafafa] p-6">
+                    <div class="mx-auto flex items-center space-x-1">
+                      <StarIcon className="h-5 w-5 text-yellow-300" />
+                      <StarIcon className="h-5 w-5 text-yellow-300" />
+                      <StarIcon className="h-5 w-5 text-yellow-300" />
+                      <StarIcon className="h-5 w-5 text-yellow-300" />
+                      <StarIcon className="h-5 w-5 text-gray-300 dark:text-gray-500" />
+                    </div>
+                    <p class="mt-2 text-[14px] font-normal leading-[22px] text-[#222]"><strong>Justin View</strong></p>
+                    <h3 class="mt-4 text-[24px] font-bold leading-[34px] text-[#222]">
+                      I enjoy the ease in which I can drag…
+                    </h3>
+                    <p class="mt-3 text-[14px] leading-[22px] text-[#555]">
+                      I enjoy the ease in which I can drag and import my designs. The user interface is fluid and
+                      dynamic. I want more color options so that I can create outfits(matching shirt and shorts) but
+                      currently I'm forced to color compliment. There needs to be more options for embroidery area/size
+                      as well being a <br />
+                      <a href="#">Read more</a>
+                    </p>
+                    <p class="mt-4 text-[14px] leading-[22px] text-[#222]">
+                      <strong>Date of experience:</strong>
+                       May 4, 2023
+                    </p>
+                  </div>
+                  <div class="splide__slide rounded-[10px] bg-[#fafafa] p-6">
+                    <div class="mx-auto flex items-center space-x-1">
+                      <StarIcon className="h-5 w-5 text-yellow-300" />
+                      <StarIcon className="h-5 w-5 text-yellow-300" />
+                      <StarIcon className="h-5 w-5 text-yellow-300" />
+                      <StarIcon className="h-5 w-5 text-yellow-300" />
+                      <StarIcon className="h-5 w-5 text-gray-300 dark:text-gray-500" />
+                    </div>
+                    <p class="mt-2 text-[14px] font-normal leading-[22px] text-[#222]"><strong>Stu</strong></p>
+                    <h3 class="mt-4 text-[24px] font-bold leading-[34px] text-[#222]">
+                      Easy Integration with Etsy, store setup in minutes!
+                    </h3>
+                    <p class="mt-3 text-[14px] leading-[22px] text-[#555]">
+                      Very easy integration with my Etsy store, products created and listed in minutes! <br />
+                      <a href="#">Read more</a>
+                    </p>
+                    <p class="mt-4 text-[14px] leading-[22px] text-[#222]">
+                      <strong>Date of experience:</strong>
+                       May 4, 2023
+                    </p>
+                  </div>
+                </ul>
+              </div>
+
+              <div class="splide__arrows hidden md:block">
+                <button class="splide__arrow splide__arrow--prev !left-[-3rem]"><ChevronRight /></button>
+                <button class="splide__arrow splide__arrow--next !right-[-3rem]"><ChevronRight /></button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div
+        class="mx-auto w-full max-w-[528px] px-2 pb-[48px] pt-[96px] md:max-w-[744px] lg:max-w-[960px] xl:max-w-[1152px]">
+        <div class="mb-10 text-center">
+          <h2
+            class="mb-2 text-center text-[32px] font-bold leading-10 tracking-[-1px] md:text-[36px] md:leading-[46px]">
+            Get a fulfillment partner who takes on the responsibility
+          </h2>
+          <p class="text-[24px] leading-[34px] text-[#555]">
+            Benefit from our 10+ years of fully owned production process
+          </p>
+        </div>
+
+        <div class="flex flex-wrap rounded-[10px] bg-[#f8f8f8] py-6">
+          <div class="h-full w-full lg:max-w-[58.3333333333%] lg:shrink-0 lg:grow-0">
+            <div
+              class="relative top-0 flex min-h-[220px] flex-col justify-center text-center opacity-100 transition-all lg:h-full lg:text-center">
+              <h2
+                class="mb-2 text-[32px] font-bold leading-10 tracking-[-1px] md:text-[36px] md:leading-[46px] lg:ml-[96px]">
+                Consistent product quality in all 15 fulfillment centers across the globe
+              </h2>
+            </div>
+          </div>
+
+          <div class="w-full lg:max-w-[41.6666666667%] lg:shrink-0 lg:grow-0 lg:pr-6">
+            <div class="relative mx-auto flex w-fit">
+              <div
+                class="absolute bottom-[5%] left-[3%] flex max-w-[800px] items-center justify-center whitespace-nowrap rounded-[5px] bg-background text-center align-middle transition-all">
+                <p class="mx-3 my-2 text-[14px] leading-[22px] text-[#222]">@wearhyacinth</p>
+              </div>
+              <img
+                src="https://i.imgur.com/kqxxF3Y.jpg"
+                alt="wearhyacinth image"
+                loading="lazy"
+                class="mx-auto h-full w-full rounded-[10px] align-middle"
+                style="max-height: 270px; object-fit: contain; max-width: max-content;"
+              />
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="mb-[64px] mt-[48px] w-full">
+        <div class="mx-auto mb-10 w-full text-center md:max-w-[744px] lg:max-w-[960px] xl:max-w-[1152px]">
+          <h2
+            class="mb-2 text-center text-[32px] font-bold leading-10 tracking-[-1px] md:text-[36px] md:leading-[46px]">
+            Customize 330+ products and start selling in minutes
+          </h2>
+          <p class="text-[24px] leading-[34px] text-[#555]">
+            Your customer makes an order—we print and ship it to them under your brand
+          </p>
+        </div>
+
+        <div
+          id="splide-main"
+          class="splide relative w-full select-none overflow-hidden px-[15%] before:absolute before:left-[-66px] before:top-6 before:z-10 before:block before:h-full before:w-[10px] before:shadow-slider before:content-[''] after:absolute after:right-[-66px] after:top-6 after:z-10 after:block after:h-full after:w-[10px] after:shadow-slider after:content-['']">
+          <div class="splide__track !overflow-visible">
+            <ul class="splide__list">
+              {
+                products &&
+                  products.map((product) => (
+                    <li class="splide__slide">
+                      <a href="#" class="select-none no-underline" tabindex={-1}>
+                        <div class="h-full overflow-hidden rounded-[10px] border bg-background">
+                          <div class="group/slider relative block pt-[100%] before:content-['']">
+                            <img
+                              loading="lazy"
+                              src={product.mainImage}
+                              alt="Hats"
+                              class="absolute top-0 block h-auto w-full select-none object-cover px-5 pt-5 align-bottom drag-none group-hover/slider:hidden"
+                            />
+                            <img
+                              data-v-aacf4adc=""
+                              loading="lazy"
+                              src={product.otherImages[0] || ''}
+                              alt="Hats"
+                              class="absolute top-0 hidden h-auto w-full select-none object-cover align-bottom drag-none group-hover/slider:block"
+                            />
+                          </div>
+                          <div class="px-4">
+                            <p class="my-8 text-center text-[18px] font-bold leading-[26px] text-[#222]">
+                              {product.title}
+                            </p>
+                          </div>
+                        </div>
+                      </a>
+                    </li>
+                  ))
+              }
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      <div class="w-full">
+        <div class="mx-auto w-full max-w-[528px] px-2 pt-[32px] md:max-w-[744px] lg:max-w-[960px] xl:max-w-[1152px]">
+          <div id="splide-comment" class="splide w-full">
+            <div class="splide__track">
+              <ul class="splide__list">
+                <li class="splide__slide flex h-full flex-col justify-center px-6 lg:flex-row">
+                  <img
+                    src="https://i.imgur.com/gcInsE4.jpg"
+                    alt="Kaysha"
+                    loading="lazy"
+                    class="max-w-full rounded-[10px] object-contain align-bottom lg:max-w-[320px] xl:max-w-[352px]"
+                  />
+                  <div class="lg:ml-[32px] xl:ml-[48px]">
+                    <h2 class="mb-1 text-[32px] font-bold leading-10 tracking-[-1px] md:text-[36px] md:leading-[46px]">
+                      I was print-on-demand from the get-go, but Tebprint was the next level!
+                    </h2>
+                    <div class="relative">
+                      <img src="https://i.imgur.com/AUvJzLy.jpg" alt="Quote" class="absolute bottom-[-21px] h-5" />
+                    </div>
+                    <p class="mt-5 text-[24px] font-normal leading-[34px] text-[#555]">
+                      “<span data-v-57f0256c=""
+                        >I was touring the world at that time, so I had no time to think about dealing with merch,
+                        handling stock, etc. I wanted something where I could have my site, do my clothing line, and
+                        have it be white-label. I compared Tebprint to competitors but the quality was much better. I
+                        also really liked the fact that there were fulfillment centers globally.</span
+                      >”
+                    </p>
+                    <p class="text-base lg:mt-2 lg:px-[2px]">
+                      <span class="text-[#555]">Kaysha,</span>
+                      <a href="#" rel="nofollow noopener" target="_blank"> Shadawear</a>
+                    </p>
+                  </div>
+                </li>
+                <li class="splide__slide flex h-full flex-col justify-center px-6 lg:flex-row">
+                  <img
+                    src="https://i.imgur.com/gcInsE4.jpg"
+                    alt="Kaysha"
+                    loading="lazy"
+                    class="max-w-full rounded-[10px] object-contain align-bottom lg:max-w-[320px] xl:max-w-[352px]"
+                  />
+                  <div class="lg:ml-[32px] xl:ml-[48px]">
+                    <h2 class="mb-1 text-[32px] font-bold leading-10 tracking-[-1px] md:text-[36px] md:leading-[46px]">
+                      I was print-on-demand from the get-go, but Tebprint was the next level!
+                    </h2>
+                    <div class="relative">
+                      <img src="https://i.imgur.com/AUvJzLy.jpg" alt="Quote" class="absolute bottom-[-65px]" />
+                    </div>
+                    <p class="mt-5 text-[24px] font-normal leading-[34px] text-[#555]">
+                      “<span data-v-57f0256c=""
+                        >I was touring the world at that time, so I had no time to think about dealing with merch,
+                        handling stock, etc. I wanted something where I could have my site, do my clothing line, and
+                        have it be white-label. I compared Tebprint to competitors but the quality was much better. I
+                        also really liked the fact that there were fulfillment centers globally.</span
+                      >”
+                    </p>
+                    <p class="text-base lg:mt-2 lg:px-[2px]">
+                      <span class="text-[#555]">Kaysha,</span>
+                      <a href="#" rel="nofollow noopener" target="_blank"> Shadawear</a>
+                    </p>
+                  </div>
+                </li>
+                <li class="splide__slide flex h-full flex-col justify-center px-6 lg:flex-row">
+                  <img
+                    src="https://i.imgur.com/gcInsE4.jpg"
+                    alt="Kaysha"
+                    loading="lazy"
+                    class="max-w-full rounded-[10px] object-contain align-bottom lg:max-w-[320px] xl:max-w-[352px]"
+                  />
+                  <div class="lg:ml-[32px] xl:ml-[48px]">
+                    <h2 class="mb-1 text-[32px] font-bold leading-10 tracking-[-1px] md:text-[36px] md:leading-[46px]">
+                      I was print-on-demand from the get-go, but Tebprint was the next level!
+                    </h2>
+                    <div class="relative">
+                      <img src="https://i.imgur.com/AUvJzLy.jpg" alt="Quote" class="absolute bottom-[-65px]" />
+                    </div>
+                    <p class="mt-5 text-[24px] font-normal leading-[34px] text-[#555]">
+                      “<span data-v-57f0256c=""
+                        >I was touring the world at that time, so I had no time to think about dealing with merch,
+                        handling stock, etc. I wanted something where I could have my site, do my clothing line, and
+                        have it be white-label. I compared Tebprint to competitors but the quality was much better. I
+                        also really liked the fact that there were fulfillment centers globally.</span
+                      >”
+                    </p>
+                    <p class="text-base lg:mt-2 lg:px-[2px]">
+                      <span class="text-[#555]">Kaysha,</span>
+                      <a href="#" rel="nofollow noopener" target="_blank"> Shadawear</a>
+                    </p>
+                  </div>
+                </li>
+              </ul>
+            </div>
+
+            <div class="splide__arrows hidden md:block">
+              <button class="splide__arrow splide__arrow--prev !left-[-2rem]"><ChevronRight /></button>
+              <button class="splide__arrow splide__arrow--next !right-[-2rem]"><ChevronRight /></button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="w-full">
+        <div class="mx-auto w-full max-w-[528px] px-2 py-[96px] md:max-w-[744px] lg:max-w-[960px] xl:max-w-[1152px]">
+          <div
+            class="rounded-[10px] bg-[#f8f8f8] bg-[url('https://i.imgur.com/Dpt28zf.jpg')] bg-center bg-no-repeat py-[64px]">
+            <h2
+              class="mb-10 text-center text-[32px] font-bold leading-10 tracking-[-1px] md:text-[36px] md:leading-[46px]">
+              Have Tebprint in your corner
+            </h2>
+            <div
+              class="mx-2 text-[32px] font-bold leading-10 tracking-[-1px] md:text-[36px] md:leading-[46px] lg:mx-[64px] xl:mx-[96px]">
+              <div class="block md:flex">
+                <div class="mb-2 border-l-2 border-[#222] pl-4 lg:mb-0 xl:mr-auto">
+                  <p class="mb-2">330</p>
+                  <p class="mb-0 text-base font-normal text-[#555]">products to customize</p>
+                </div>
+                <div class="mx-auto mb-2 border-l-2 border-[#222] pl-4 lg:mb-0">
+                  <p class="mb-2">1,000,000+</p>
+                  <p class="mb-0 text-base font-normal text-[#555]">items fulfilled each month</p>
+                </div>
+                <div class="mb-2 border-l-2 border-[#222] pl-4 lg:mb-0 xl:ml-auto">
+                  <p class="mb-2">67,975,344+</p>
+                  <p class="mb-0 text-base font-normal text-[#555]">items trusted to print</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="w-full overflow-hidden py-[64px]">
+        <div class="mx-auto w-full max-w-[528px] px-2 text-center md:max-w-[744px] lg:max-w-[960px] xl:max-w-[1152px]">
+          <div class="mb-10">
+            <h2
+              class="mb-2 text-center text-[32px] font-bold leading-10 tracking-[-1px] md:text-[36px] md:leading-[46px]">
+              Turn your ideas into a successful business in 3 easy steps
+            </h2>
+            <p class="text-[24px] leading-[34px] text-[#555]">We’ll fulfill your orders while you run your company</p>
+          </div>
+
+          <div class="flex overflow-hidden">
+            <div
+              class="max-w-[100%] shrink-0 grow-0 basis-[100%] text-center md:max-w-[50%] md:shrink-0 md:grow-0 md:basis-[50%] lg:max-w-[33.3333333333%] lg:shrink-0 lg:grow-0 lg:basis-[33.3333333333%]">
+              <div>
+                <img
+                  src="https://i.imgur.com/Jrd6aT5.jpg"
+                  alt="register and connect a store"
+                  class="mx-auto max-h-[180px] max-w-[180px] align-middle"
+                  loading="lazy"
+                  width="180"
+                  height="180"
+                />
+              </div>
+              <div class="relative z-0 mt-2">
+                <div
+                  class="mx-auto h-10 w-10 rounded-[20px] border-[3px] border-[#e5e5e5] bg-background text-center text-[15px] font-bold leading-[31px] text-[#555] shadow-[0_0_0_8px_#fff] before:absolute before:top-[50%] before:z-[-1] before:w-full before:border-b before:border-b-[#e5e5e5] before:content-['']">
+                  1
+                </div>
+              </div>
+              <div class="px-4">
+                <div class="mt-3 text-[18px] font-bold leading-[26px]">Register and connect your store to Tebprint</div>
+              </div>
+            </div>
+            <div
+              class="max-w-[100%] shrink-0 grow-0 basis-[100%] text-center md:max-w-[50%] md:shrink-0 md:grow-0 md:basis-[50%] lg:max-w-[33.3333333333%] lg:shrink-0 lg:grow-0 lg:basis-[33.3333333333%]">
+              <div>
+                <img
+                  src="https://i.imgur.com/5k2Xt5w.jpg"
+                  alt="design a product"
+                  class="mx-auto max-h-[180px] max-w-[180px] align-middle"
+                  loading="lazy"
+                  width="180"
+                  height="180"
+                />
+              </div>
+              <div class="relative z-0 mt-2">
+                <div
+                  class="mx-auto h-10 w-10 rounded-[20px] border-[3px] border-[#e5e5e5] bg-background text-center text-[15px] font-bold leading-[31px] text-[#555] shadow-[0_0_0_8px_#fff] before:absolute before:top-[50%] before:z-[-1] before:w-full before:border-b before:border-b-[#e5e5e5] before:content-['']">
+                  2
+                </div>
+              </div>
+              <div class="px-4">
+                <div class="mt-3 text-[18px] font-bold leading-[26px]">
+                  Create your products in our free Design Maker and sell anything you want
+                </div>
+              </div>
+            </div>
+            <div
+              class="max-w-[100%] shrink-0 grow-0 basis-[100%] text-center md:max-w-[50%] md:shrink-0 md:grow-0 md:basis-[50%] lg:max-w-[33.3333333333%] lg:shrink-0 lg:grow-0 lg:basis-[33.3333333333%]">
+              <div>
+                <img
+                  src="https://i.imgur.com/7jXpp9Y.jpg"
+                  alt="earn money"
+                  class="mx-auto max-h-[180px] max-w-[180px] align-middle"
+                  loading="lazy"
+                  width="180"
+                  height="180"
+                />
+              </div>
+              <div class="relative z-0 mt-2">
+                <div
+                  class="mx-auto h-10 w-10 rounded-[20px] border-[3px] border-[#e5e5e5] bg-background text-center text-[15px] font-bold leading-[31px] text-[#555] shadow-[0_0_0_8px_#fff]">
+                  3
+                </div>
+              </div>
+              <div class="px-4">
+                <div class="mt-3 text-[18px] font-bold leading-[26px]">Earn money from your sales</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="w-full overflow-hidden pt-8">
+        <div class="mx-auto max-w-[528px] px-2 text-center md:max-w-[744px] lg:max-w-[960px] xl:max-w-[1152px]">
+          <div class="flex flex-wrap items-center">
+            <div
+              class="order-1 text-center lg:order-none lg:max-w-[41.6666666667%] lg:shrink-0 lg:grow-0 lg:basis-[41.6666666667%] lg:text-left">
+              <h2
+                class="mb-6 mt-10 text-[32px] font-bold leading-10 tracking-[-1px] md:text-[36px] md:leading-[46px] lg:mt-0">
+                Reach customers globally using our 15 fulfillment centers
+              </h2>
+              <p class="text-[24px] font-normal leading-[34px] tracking-normal">
+                Get your products delivered to your customers in <span
+                  class="inline-block h-[16px] w-6 bg-contain bg-no-repeat"
+                  style="background-image: url(https://i.imgur.com/y4uLho9.jpg)"></span> Vietnam as early as September 8
+              </p>
+            </div>
+
+            <div
+              class="order-none lg:order-1 lg:max-w-[58.3333333333%] lg:shrink-0 lg:grow-0 lg:basis-[58.3333333333%]">
+              <img class="h-auto w-full" loading="lazy" alt="destination map" src="https://i.imgur.com/jTT8XVc.jpg" />
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="relative z-0 w-full overflow-hidden py-[64px]">
+        <div class="mx-auto max-w-[528px] px-2 text-center md:max-w-[744px] lg:max-w-[960px] xl:max-w-[1152px]">
+          <div class="mb-10">
+            <h2
+              class="mb-2 text-center text-[32px] font-bold leading-10 tracking-[-1px] md:text-[36px] md:leading-[46px]">
+              Doing large volumes? Get in touch with our sales team!
+            </h2>
+          </div>
+
+          <div
+            class="mx-auto w-full rounded-[10px] bg-background p-[64px] text-left shadow-[0_4px_16px_0_rgba(0,0,0,.2)] md:w-[83.3333333333%]">
+            <HomeForm client:load />
+          </div>
+        </div>
+
+        <div class="absolute bottom-0 top-[370px] z-[-1] w-full bg-[#3d3733]"></div>
+      </div>
+
+      <div class="flex items-center justify-end px-3 py-6">
+        <a href="#back-to-top" class="group/back flex items-center text-base font-bold text-[#222] no-underline">
+          <span class="underline">Back to top</span>
+          <MoveUp className="ml-2 h-5 w-6 transition-all group-hover/back:translate-y-[-5px]" />
+        </a>
+      </div>
+    </div>
+  </div>
+</Base>
+
+<script>
+  import Splide from '@splidejs/splide';
+  import { AutoScroll } from '@splidejs/splide-extension-auto-scroll';
+
+  document.addEventListener('DOMContentLoaded', function () {
+    new Splide('#splide-main', {
+      type: 'loop',
+      drag: 'free',
+      focus: 'center',
+      perPage: 4,
+      autoScroll: {
+        speed: 1,
+      },
+      gap: 32,
+      pagination: false,
+      arrows: false,
+      breakpoints: {
+        1023: {
+          perPage: 2,
+        },
+        767: {
+          perPage: 1,
+        },
+      },
+    }).mount({ AutoScroll });
+
+    new Splide('#splide-comment', {}).mount();
+    new Splide('#splide-ratings', {
+      type: 'loop',
+      perPage: 3,
+      breakpoints: {
+        1279: {
+          perPage: 2,
+        },
+        1023: {
+          perPage: 1,
+        },
+      },
+    }).mount();
+
+    const sellOnlinefElelement = document.querySelector('#sell-online') as HTMLInputElement;
+    const mySelfElement = document.querySelector('#order-myself') as HTMLInputElement;
+    const topCheckElement = document.querySelector('#top-check') as HTMLElement;
+    const imageSellElement = document.querySelector('#pic-sell') as HTMLElement;
+    const imageMySelfElement = document.querySelector('#pic-myself') as HTMLElement;
+
+    const sellTitleElement = document.querySelector('#sell-title') as HTMLElement;
+    const sellDescriptionElement = document.querySelector('#sell-description') as HTMLElement;
+    const sellActionElement = document.querySelector('#sell-action') as HTMLElement;
+
+    topCheckElement.addEventListener('click', () => {
+      if (sellOnlinefElelement.checked) {
+        imageSellElement.className = 'block';
+        imageMySelfElement.className = 'hidden';
+        sellTitleElement.textContent = 'Sell custom products online with Tebprint';
+        sellDescriptionElement.textContent = 'Build and grow your ecommerce brand with premium products';
+        sellActionElement.textContent = "Let/'s go";
+      } else if (mySelfElement.checked) {
+        imageSellElement.className = 'hidden';
+        imageMySelfElement.className = 'block';
+        sellTitleElement.textContent = 'Create custom products online';
+        sellDescriptionElement.textContent = 'Turn your ideas into premium products that leave a lasting impression';
+        sellActionElement.textContent = 'Explore products';
+      }
+    });
+  });
+</script>

@@ -1,0 +1,13 @@
+---
+import { BlogManager } from '@/page-layouts';
+import BaseSideBar from '@/templates/BaseSideBar.astro';
+import { AppConfig } from '@/utils';
+
+const { title, description } = AppConfig;
+
+export const prerender = true;
+---
+
+<BaseSideBar head={{ title, description }}>
+  <BlogManager client:load />
+</BaseSideBar>

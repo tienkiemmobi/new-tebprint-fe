@@ -1,0 +1,44 @@
+name: Docker Image CI
+
+on:
+  push:
+    branches: ['test']
+
+jobs:
+  push_to_docker_hub:
+    runs-on: [self-hosted, test]
+    steps:
+      - name: Checkout Repo
+        uses: actions/checkout@v4
+        with:
+          clean: 'false'
+
+      - name: Login to HUB
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      - name: Build and Push
+        uses: docker/build-push-action@v5
+        with:
+          context: ./
+          file: ./Dockerfile
+          push: true
+          tags: ${{ secrets.DOCKER_USERNAME }}/${{ secrets.CONTAINER_NAME }}:latest
+
+  run_on_container:
+    runs-on: [self-hosted, test]
+    needs: [push_to_docker_hub]
+    steps:
+      - name: Deploy to VPS
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.TEST_HOST }}
+          username: ${{ secrets.TEST_HOST_USERNAME }}
+          password: ${{ secrets.TEST_HOST_PASSWORD }}
+          script:
+            docker stop ${{ secrets.CONTAINER_NAME }};
+            docker rm ${{ secrets.CONTAINER_NAME }};
+            docker run -d -p ${{ secrets.PORT }}:${{ secrets.PORT }} --restart unless-stopped --name ${{ secrets.CONTAINER_NAME }} -t ${{ secrets.DOCKER_USERNAME }}/${{ secrets.CONTAINER_NAME }}:latest;
+            docker images prune;

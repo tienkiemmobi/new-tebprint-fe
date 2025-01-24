@@ -1,0 +1,13 @@
+---
+import { Orders } from '@/page-layouts';
+import BaseSideBar from '@/templates/BaseSideBar.astro';
+import { AppConfig } from '@/utils';
+
+const { title, description } = AppConfig;
+const { id } = Astro.params;
+const Referer = Astro.request.headers.get('Referer');
+---
+
+<BaseSideBar head={{ title, description }}>
+  <Orders referer={Referer || ''} orderIdUrl={id} client:load />
+</BaseSideBar>

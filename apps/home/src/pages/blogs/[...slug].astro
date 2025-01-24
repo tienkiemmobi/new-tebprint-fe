@@ -1,0 +1,20 @@
+---
+// eslint-disable consistent-return
+import { Separator } from 'ui';
+
+import type { Blog } from '@/interfaces';
+import { blogService } from '@/services';
+import BaseBlog from '@/templates/BaseBlog.astro';
+
+const { slug } = Astro.params;
+const response = await blogService.getBlogBySlug(slug);
+if (!response?.success || !response?.data) return Astro.redirect('/404');
+const blog: Blog = response?.data;
+---
+
+<BaseBlog head={{ title: blog.title, description: 'Tebprint' }}>
+  <div class="bg-gray-100">
+    <div class="my-10 px-4" set:html={blog.content.replace('900px', '')} />
+  </div>
+  <Separator className="w-full" />
+</BaseBlog>

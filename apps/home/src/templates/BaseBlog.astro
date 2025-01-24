@@ -1,0 +1,45 @@
+---
+import 'ui/css/globals.css';
+
+import type { BaseProps } from 'shared';
+// import ViewTransitions from 'astro/components/ViewTransitions.astro';
+import { Wrapper } from 'ui';
+
+import { Footer, Header } from '@/layouts';
+import { productService } from '@/services';
+import { AppConfig } from '@/utils';
+
+const currentPage = Astro.url.pathname;
+const {
+  head: { title, description },
+} = Astro.props as BaseProps;
+const productResponse = await productService.getProducts();
+---
+
+<html lang="en" data-theme="light">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>{title}</title>
+    <meta name="description" content={description} />
+    <meta name="author" content={AppConfig.author} />
+
+    <link rel="icon" type="image/x-icon" href="/favicon.ico" />
+
+    <!-- <ViewTransitions /> -->
+  </head>
+  <body class="no-scrollbar overflow-y-scroll">
+    <Wrapper>
+      <Header
+        currentPage={currentPage}
+        listProduct={productResponse.success && productResponse.data ? productResponse.data : []}
+        client:load
+      />
+      <slot class="overflow-y-scroll" />
+    </Wrapper>
+
+    <div class="">
+      <Footer client:load />
+    </div>
+  </body>
+</html>

@@ -1,0 +1,11 @@
+---
+import { HelpCenter } from '@/page-layouts';
+import BaseSideBar from '@/templates/BaseSideBar.astro';
+import { AppConfig } from '@/utils';
+
+const { title, description } = AppConfig;
+---
+
+<BaseSideBar head={{ title, description }}>
+  <HelpCenter client:load />
+</BaseSideBar>

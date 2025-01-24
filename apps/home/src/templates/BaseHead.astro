@@ -1,0 +1,52 @@
+---
+import 'ui/css/globals.css';
+
+import ViewTransitions from 'astro/components/ViewTransitions.astro';
+import type { BaseProps } from 'shared';
+import { Wrapper } from 'ui';
+
+import { Header } from '@/layouts';
+import { productService } from '@/services';
+import { AppConfig } from '@/utils';
+
+const IS_VIEW_TRANSITIONS_ENABLED = import.meta.env.PUBLIC_VIEW_TRANSITIONS_ENABLED;
+
+// let ViewTransitions = null;
+
+// if (IS_VIEW_TRANSITIONS_ENABLED) {
+//   ViewTransitions = await import('astro/components/ViewTransitions.astro');
+// }
+
+const currentPage = Astro.url.pathname;
+const {
+  head: { title, description },
+  isPublic,
+} = Astro.props as BaseProps;
+const productResponse = await productService.getProducts();
+---
+
+<html lang="en" data-theme="light">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>{title}</title>
+    <meta name="description" content={description} />
+    <meta name="author" content={AppConfig.author} />
+
+    <link rel="icon" type="image/x-icon" href="/favicon.ico" />
+
+    {IS_VIEW_TRANSITIONS_ENABLED && <ViewTransitions />}
+  </head>
+  <body class="overflow-y-hidden">
+    <Wrapper>
+      <Header
+        currentPage={currentPage}
+        isPublic={isPublic}
+        listProduct={productResponse.success && productResponse.data ? productResponse.data : []}
+        transition:persist
+        client:load
+      />
+      <slot />
+    </Wrapper>
+  </body>
+</html>
