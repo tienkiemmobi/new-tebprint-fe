@@ -37,7 +37,7 @@ jobs:
         uses: andykenward/github-actions-cloudflare-pages@v2.3.2
         id: pages
         with:
-          cloudflare-api-token: MSThsKLL2Mkeeww56gs59hqNYqEZ9yKe8FbuosEl
+          cloudflare-api-token: zUOipkf1lJhcveN3z-xl5S-ONoBVLOAXpWJRxn3W
           cloudflare-account-id: a61dcf06b48e9d50192ef57cc997da88
           cloudflare-project-name: test
           directory: apps/home/dist-prod  # Đảm bảo thư mục dist là nơi chứa các file sau khi build (có thể thay đổi tùy theo dự án)
