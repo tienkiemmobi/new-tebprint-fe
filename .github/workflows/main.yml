@@ -40,6 +40,6 @@ jobs:
           cloudflare-api-token: MSThsKLL2Mkeeww56gs59hqNYqEZ9yKe8FbuosEl
           cloudflare-account-id: a61dcf06b48e9d50192ef57cc997da88
           cloudflare-project-name: test
-          directory: dist-prod  # Đảm bảo thư mục dist là nơi chứa các file sau khi build (có thể thay đổi tùy theo dự án)
+          directory: apps/home/dist-prod  # Đảm bảo thư mục dist là nơi chứa các file sau khi build (có thể thay đổi tùy theo dự án)
           github-token: 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
           
