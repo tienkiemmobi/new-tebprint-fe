@@ -352,6 +352,9 @@ const Header: React.FC<HeadProps> = (props) => {
                 <Button className="bg-white text-color hover:bg-transparent hover:text-primary md:px-1 lg:px-4 lg:py-2">
                   <a href="/stores">Stores</a>
                 </Button>
+                <Button className="bg-white text-color hover:bg-transparent hover:text-primary md:px-1 lg:px-4 lg:py-2">
+                  <a href="http://localhost:3000/">Blog</a>
+                </Button>
               </>
             )}
           </div>

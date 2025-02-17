@@ -4,6 +4,8 @@ import { CustomAxios } from '@/utils';
 
 const login = async (email: string, password: string, recaptchaToken: string) => {
   try {
+    console.log(import.meta.env.PUBLIC_API_URL);
+
     const { data } = await CustomAxios.post('auth/login', { email, password, recaptchaToken });
 
     return data;

@@ -1,6 +1,6 @@
 import { format, subDays } from 'date-fns';
 // eslint-disable-next-line import/no-named-default
-import { default as ReactECharts2 } from 'echarts-for-react';
+// import { default as ReactECharts2 } from 'echarts-for-react';
 import {
   BookmarkX,
   Box,
@@ -23,12 +23,12 @@ import { cn } from 'ui/lib/utils';
 
 import { orderService } from '@/services';
 
-let ReactECharts = ReactECharts2;
-// @ts-ignore
-if (ReactECharts2.default) {
-  // @ts-ignore
-  ReactECharts = ReactECharts2.default;
-}
+// let ReactECharts = ReactECharts2;
+// // @ts-ignore
+// if (ReactECharts2.default) {
+//   // @ts-ignore
+//   ReactECharts = ReactECharts2.default;
+// }
 
 const dateOptionsAsConst = ['Today', 'Last 7 days', 'Last 30 days'] as const;
 
@@ -396,7 +396,7 @@ const AdminDashboard = () => {
             <CardTitle>Delivered Packages</CardTitle>
           </CardHeader>
           <CardContent>
-            <ReactECharts option={options} />
+            {/* <ReactECharts option={options} /> */}
           </CardContent>
         </Card>
       </div>

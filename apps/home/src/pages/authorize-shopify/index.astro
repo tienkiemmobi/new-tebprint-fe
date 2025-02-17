@@ -1,0 +1,26 @@
+---
+import BaseHead from '@/templates/BaseHead.astro';
+import { AppConfig } from '@/utils';
+import { AuthorizeShopify } from '@/components';
+
+const { title, description } = AppConfig;
+const url = new URL(Astro.request.url);
+const shop = url.searchParams.get("shop") || "";
+const code = url.searchParams.get("code") || "";
+---
+
+<BaseHead head={{ title, description }}>
+  <div class="flex min-h-screen w-full items-center justify-center bg-gradient-to-r from-orange-300 to-yellow-300">
+    <div class="text-center">
+      <img class="mx-auto w-[150px]" src="/assets/LOGO.png" />
+      <h2 class="text-2xl text-white">Authorize to Tebprint</h2>
+      <AuthorizeShopify client:load shop={shop} code={code}/>
+      <a
+        href="/"
+        class="mt-4 block rounded-lg bg-white px-4 py-2 text-color transition duration-300 ease-in-out hover:opacity-100"
+      >
+        Go back home
+      </a>
+    </div>
+  </div>
+</BaseHead>
