@@ -29,7 +29,7 @@ Thumbs.db
 .vercel
 
 # Teb
-.env
+# .env
 .vscode
 yarn.lock
 .cspellcache
