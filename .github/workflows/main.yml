@@ -29,10 +29,13 @@ jobs:
       # Bước 4: Cài đặt dependencies với pnpm
       - run: pnpm install
 
-      # Bước 5: Chạy ứng dụng với lệnh 'pnpm start:prod'
+      # Bước 4: Build
+      - run: pnpm build:home
+
+      # Bước 6: Chạy ứng dụng với lệnh 'pnpm start:prod'
       - run: pnpm start:home
 
-      # Bước 6: Triển khai lên Cloudflare Pages
+      # Bước 7: Triển khai lên Cloudflare Pages
       - name: Deploy to Cloudflare Pages
         uses: andykenward/github-actions-cloudflare-pages@v2.3.2
         id: pages
