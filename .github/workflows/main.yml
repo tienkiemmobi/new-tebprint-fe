@@ -32,8 +32,8 @@ jobs:
       # Bước 4: Build
       - run: pnpm build:home
 
-      # Bước 6: Chạy ứng dụng với lệnh 'pnpm start:prod'
-      - run: pnpm start:home
+      # # Bước 6: Chạy ứng dụng với lệnh 'pnpm start:prod'
+      # - run: pnpm start:home
 
       # Bước 7: Triển khai lên Cloudflare Pages
       - name: Deploy to Cloudflare Pages
