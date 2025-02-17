@@ -1,0 +1,45 @@
+name: Deploy to Cloudflare Pages
+
+on:
+  push:
+    branches:
+      - dev  # Chạy khi có thay đổi trên nhánh 'main'
+
+jobs:
+  deploy:
+    permissions:
+      actions: read
+      contents: read
+      deployments: write
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      # Bước 1: Checkout mã nguồn từ GitHub
+      - uses: actions/checkout@v4
+
+      # Bước 2: Cài đặt Node.js (phiên bản 22.11.0)
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22.11.0'
+
+      # Bước 3: Cài đặt pnpm
+      - run: npm install -g pnpm
+
+      # Bước 4: Cài đặt dependencies với pnpm
+      - run: pnpm install
+
+      # Bước 5: Chạy ứng dụng với lệnh 'pnpm start:prod'
+      - run: pnpm start:prod
+
+      # Bước 6: Triển khai lên Cloudflare Pages
+      - name: Deploy to Cloudflare Pages
+        uses: andykenward/github-actions-cloudflare-pages@v2.3.2
+        id: pages
+        with:
+          cloudflare-api-token: MSThsKLL2Mkeeww56gs59hqNYqEZ9yKe8FbuosEl
+          cloudflare-account-id: a61dcf06b48e9d50192ef57cc997da88
+          cloudflare-project-name: test
+          directory: dist-prod  # Đảm bảo thư mục dist là nơi chứa các file sau khi build (có thể thay đổi tùy theo dự án)
+          github-token: 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
+          
