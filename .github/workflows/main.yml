@@ -34,7 +34,7 @@ jobs:
 
       # Bước 6: Triển khai lên Cloudflare Pages
       - name: Deploy to Cloudflare Pages
-        uses: andykenward/github-actions-cloudflare-pages@v2.3.2
+        uses: andykenward/github-actions-cloudflare-pages@v2.5.1
         id: pages
         with:
           cloudflare-api-token: MSThsKLL2Mkeeww56gs59hqNYqEZ9yKe8FbuosEl
