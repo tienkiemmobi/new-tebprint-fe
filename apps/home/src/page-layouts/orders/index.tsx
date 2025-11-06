@@ -2,6 +2,7 @@ import type { PaginationState } from '@tanstack/react-table';
 import { Camera, ChevronDown } from 'lucide-react';
 import * as onScan from 'onscan.js';
 // @ts-ignore
+import type { ChangeEvent } from 'react';
 import React, { useCallback, useEffect, useState } from 'react';
 import { toast } from 'react-toastify';
 import type { OrderStatistic, Product } from 'shared';
@@ -15,6 +16,7 @@ import {
   DropdownMenuContent,
   DropdownMenuGroup,
   DropdownMenuTrigger,
+  Input,
   Label,
   RadioGroup,
   RadioGroupItem,
@@ -127,6 +129,7 @@ const Orders: React.FC<OrdersProps> = (props) => {
 
   const [pagination, setPagination] = useState<PaginationState>({ pageIndex: 1, pageSize: 20 });
   const [searchValue, setSearchValue] = useState('');
+  const [email, setEmail] = useState('');
   const [isParamLoaded, setIsParamLoaded] = useState(false);
   const [statusParamUrl, setStatusParamUrl] = useState('');
   const [paramUrl, setParamUrl] = useState<ParamUrl[]>([]);
@@ -163,7 +166,7 @@ const Orders: React.FC<OrdersProps> = (props) => {
     return orders.filter((order) => selectedOrders.includes(order._id));
   };
 
-  const ListOrder: Order[] = filteredOrders().map((orderItem) => {
+  const orderList: Order[] = filteredOrders().map((orderItem) => {
     const newOrder: Record<string, unknown> = { ...sampleOrder };
 
     const keys = Object.keys(newOrder);
@@ -175,8 +178,8 @@ const Orders: React.FC<OrdersProps> = (props) => {
     return newOrder as unknown as Order;
   });
 
-  const handleConvertOrders = () => {
-    const updatedFakeOrders = ListOrder.map((order) => {
+  const handleConvertOrders = (orderList) => {
+    const updatedFakeOrders = orderList.map((order) => {
       const renameMap: Record<string, string> = { id: 'orderId' };
 
       const res = Object.fromEntries(Object.entries(order).map(([key, value]) => [renameMap[key] ?? key, value]));
@@ -211,22 +214,55 @@ const Orders: React.FC<OrdersProps> = (props) => {
     return flattenedArray;
   };
 
-  const convertedNormalWords = handleConvertOrders().map((order) => {
-    const convertedOrder: Record<string, unknown> = {};
+  const convertedNormalWords = (orderList) => {
+    return handleConvertOrders(orderList).map((order) => {
+      const convertedOrder: Record<string, unknown> = {};
 
-    Object.keys(order).forEach((key) => {
-      const convertedKey = camelCaseToWords(key);
+      Object.keys(order).forEach((key) => {
+        const convertedKey = camelCaseToWords(key);
 
-      convertedOrder[convertedKey] = order[key as keyof OrderExportCsvDto];
+        convertedOrder[convertedKey] = order[key as keyof OrderExportCsvDto];
+      });
+
+      return convertedOrder;
     });
-
-    return convertedOrder;
-  });
+  };
 
   const handleExport = () => {
     if (selectedOrders.length) {
       const workbook = XLSX.utils.book_new();
-      const worksheet = XLSX.utils.json_to_sheet(convertedNormalWords);
+      const worksheet = XLSX.utils.json_to_sheet(convertedNormalWords(orderList));
+
+      XLSX.utils.book_append_sheet(workbook, worksheet, 'Sheet1');
+
+      const csvFilePath = `List Order-${new Date().toLocaleString()}.csv`;
+      XLSX.writeFile(workbook, csvFilePath);
+    } else {
+      toast.warning('Please select orders to download CSV');
+    }
+  };
+
+  const handleExportAll = async () => {
+    if (email.trim()) {
+      const allOrders = (await orderService.getOrders({ pageIndex: 1, pageSize: 10_000 }, '', email, '', '', '', ''))
+        .data;
+      const workbook = XLSX.utils.book_new();
+      console.log('🚀 ~ handleExportAll ~ allOrders:', allOrders);
+      const worksheet = XLSX.utils.json_to_sheet(
+        convertedNormalWords(
+          allOrders.map((orderItem) => {
+            const newOrder: Record<string, unknown> = { ...sampleOrder };
+
+            const keys = Object.keys(newOrder);
+            // eslint-disable-next-line array-callback-return
+            keys.map((item) => {
+              newOrder[item] = orderItem[item as keyof Order];
+            });
+
+            return newOrder as unknown as Order;
+          }),
+        ),
+      );
 
       XLSX.utils.book_append_sheet(workbook, worksheet, 'Sheet1');
 
@@ -235,7 +271,7 @@ const Orders: React.FC<OrdersProps> = (props) => {
       setSelectedOrders([]);
       setResetCheckbox(true);
     } else {
-      toast.warning('Please select orders to download CSV');
+      toast.warning('Please enter valid email');
     }
   };
 
@@ -254,6 +290,13 @@ const Orders: React.FC<OrdersProps> = (props) => {
                 element: (
                   <div className="cursor-pointer">
                     <button onClick={handleExport}>Export as CSV</button>
+                  </div>
+                ),
+              },
+              {
+                element: (
+                  <div className="cursor-pointer">
+                    <button onClick={handleExportAll}>Export all as CSV</button>
                   </div>
                 ),
               },
@@ -420,6 +463,10 @@ const Orders: React.FC<OrdersProps> = (props) => {
     }));
   };
 
+  const handleSearchByEmail = (e: ChangeEvent<HTMLInputElement>) => {
+    setEmail(e.target.value);
+  };
+
   const handlePopstate = (event: PopStateEvent) => {
     if (!event.state) {
       handleChangeOrderId();
@@ -546,7 +593,7 @@ const Orders: React.FC<OrdersProps> = (props) => {
     const to = filterDate.split(' - ')[1] || from;
 
     const store = selectedStore === 'all' ? '' : selectedStore;
-    const statisticsResponse = await orderService.getStatistics(from, to, store, selectedProductId);
+    const statisticsResponse = await orderService.getStatistics(from, to, store, email, selectedProductId);
     if (!statisticsResponse.success || !statisticsResponse.data) {
       toast.error(statisticsResponse.message);
 
@@ -569,6 +616,7 @@ const Orders: React.FC<OrdersProps> = (props) => {
       const orderResponse = await orderService.getOrders(
         pagination,
         searchValue,
+        email,
         statusParamUrl,
         productParamUrl,
         store,
@@ -583,7 +631,7 @@ const Orders: React.FC<OrdersProps> = (props) => {
 
       orderResponse.data.forEach((order) => {
         order.lineItems.forEach((lineItem) => {
-          if (!lineItem.frontArtwork && lineItem.mockup1) {
+          if (!lineItem?.frontArtwork && lineItem?.mockup1) {
             lineItem.frontArtwork = lineItem.mockup1;
           }
         });
@@ -604,6 +652,7 @@ const Orders: React.FC<OrdersProps> = (props) => {
     pagination.pageIndex,
     pagination.pageSize,
     searchValue,
+    email,
     statusParamUrl,
     productParamUrl,
     selectedStore,
@@ -614,7 +663,7 @@ const Orders: React.FC<OrdersProps> = (props) => {
   useEffect(() => {
     // if (([RoleType.ADMIN, RoleType.MANAGER, RoleType.SELLER] as string[]).includes(user?.role || ''))
     fetchStatistics(ordersState.filterDate);
-  }, [selectedStore, ordersState.filterDate, selectedProductId]);
+  }, [selectedStore, email, ordersState.filterDate, selectedProductId]);
 
   useEffect(() => {
     onScan.attachTo(document, {
@@ -672,6 +721,19 @@ const Orders: React.FC<OrdersProps> = (props) => {
             <div className="mt-6 border border-[#e3e4e5] bg-background p-6 shadow-table-shadow">
               <div className="flex flex-col gap-4 md:gap-6">
                 <Search placeholder="Search by order number, order name..." onSearch={setSearchValue} />
+
+                <div className="flex">
+                  {(user?.role === RoleType.ADMIN || user?.role === RoleType.WAREHOUSE) && (
+                    <Input
+                      className="w-1/3"
+                      type="text"
+                      placeholder="Search by email"
+                      onChange={(e) => {
+                        handleSearchByEmail(e);
+                      }}
+                    ></Input>
+                  )}
+                </div>
 
                 <div className="">
                   <div className="">

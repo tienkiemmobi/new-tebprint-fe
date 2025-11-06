@@ -62,8 +62,6 @@ const Pagination = (props: PaginationProps) => {
     pageOptions = [20, 40, 60, 100],
   } = props;
 
-  console.log('🚀 ~ Pagination ~ pageOptions:', pageOptions);
-
   const handlePaginationChange = (data: Record<string, number>) => {
     const { selected } = data;
 
@@ -190,8 +188,6 @@ const Pagination = (props: PaginationProps) => {
               </SelectTrigger>
               <SelectContent>
                 {pageOptions.map((pageSize) => {
-                  console.log(pageSize);
-
                   return (
                     <SelectItem key={pageSize} disabled={total < pageSize} value={`${pageSize}`}>
                       {pageSize}

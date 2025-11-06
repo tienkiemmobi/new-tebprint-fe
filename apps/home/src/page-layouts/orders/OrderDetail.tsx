@@ -368,9 +368,45 @@ const OrderDetail = ({ orderId, onBackClick, handlePopstate }: OrderDetailProps)
     }
   };
 
+  const handleSetInProductionStatus = async () => {
+    const currentOrderId = orderDetailState.order?._id as string;
+    const response = await orderService.updateStatus(currentOrderId, 'in_production');
+
+    if (!response.success || !response.data) {
+      toast.error(response.message);
+
+      return;
+    }
+
+    toast.success(response.message);
+  };
+
   const handleSetProducedStatus = async () => {
     const currentOrderId = orderDetailState.order?._id as string;
     const response = await orderService.updateStatus(currentOrderId, 'produced');
+
+    if (!response.success || !response.data) {
+      toast.error(response.message);
+
+      return;
+    }
+
+    toast.success(response.message);
+  };
+
+  const handleSendToProvider = async (
+    printifyLineItems:
+      | {
+          printifyProviderId: number;
+          printifyBlueprintId: number;
+          printifyVariantId: number;
+        }[]
+      | null = null,
+    priority: string = '',
+  ) => {
+    const currentOrderId = orderDetailState.order?._id as string;
+    const response = await orderService.sendToProvider(currentOrderId, printifyLineItems, priority);
+    console.log('🚀 ~ OrderDetail ~ response:', response.data);
 
     if (!response.success || !response.data) {
       toast.error(response.message);
@@ -410,6 +446,34 @@ const OrderDetail = ({ orderId, onBackClick, handlePopstate }: OrderDetailProps)
     }
   };
 
+  function openBase64Pdf(base64) {
+    // Remove base64 prefix if present
+    const base64Data = base64.replace(/^data:application\/pdf;base64,/, '');
+
+    // Decode base64 to binary
+    const binary = atob(base64Data);
+    const len = binary.length;
+    const buffer = new Uint8Array(len);
+    for (let i = 0; i < len; i++) {
+      buffer[i] = binary.charCodeAt(i);
+    }
+
+    // Create Blob and Object URL
+    const blob = new Blob([buffer], { type: 'application/pdf' });
+    const blobUrl = URL.createObjectURL(blob);
+
+    // Open PDF in new tab
+    const newWindow = window.open(blobUrl, '_blank');
+
+    newWindow?.print();
+    setTimeout(() => {
+      newWindow?.print();
+    }, 1000);
+
+    // Optional: revoke URL after some delay
+    setTimeout(() => URL.revokeObjectURL(blobUrl), 10000); // revoke after 10s
+  }
+
   const printLabel = async () => {
     const currentOrderId = orderDetailState.order?._id as string;
     const response = await orderService.printLabel(currentOrderId);
@@ -423,7 +487,9 @@ const OrderDetail = ({ orderId, onBackClick, handlePopstate }: OrderDetailProps)
     const labelUrl = response.data;
 
     if (labelUrl.startsWith('data')) {
-      openPrintWindow(labelUrl);
+      // openPrintWindow(labelUrl);
+
+      openBase64Pdf(labelUrl);
     } else {
       const newWindow = window.open(labelUrl);
       newWindow!.onload = function () {
@@ -627,6 +693,106 @@ const OrderDetail = ({ orderId, onBackClick, handlePopstate }: OrderDetailProps)
                       </Form>
                     </DialogContent>
                   </Dialog>
+                  {/* Send to provider button */}
+                  {[RoleType.ADMIN, RoleType.MANAGER, RoleType.WAREHOUSE].includes(user?.role) && (
+                    <Button
+                      className="ml-4"
+                      onClick={() => {
+                        handleSendToProvider(null, undefined);
+                      }}
+                    >
+                      Send to provider
+                    </Button>
+                  )}
+                  {[RoleType.ADMIN, RoleType.MANAGER, RoleType.WAREHOUSE].includes(user?.role) && (
+                    <Button
+                      className="ml-4"
+                      onClick={() => {
+                        handleSendToProvider(null, 'priority');
+                      }}
+                    >
+                      Send to provider priority
+                    </Button>
+                  )}
+                  {/* {[RoleType.ADMIN, RoleType.MANAGER, RoleType.WAREHOUSE].includes(user?.role) && (
+                    <Dialog>
+                      <DialogTrigger asChild>
+                        <Button className="ml-4">Send to Printify</Button>
+                      </DialogTrigger>
+                      <DialogContent className="max-w-2xl">
+                        <DialogHeader>
+                          <DialogTitle>Send to Printify</DialogTitle>
+                        </DialogHeader>
+                        <form
+                          onSubmit={async (e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+
+                            const formData = new FormData(e.currentTarget);
+                            const lineItems = orderDetailState.order.lineItems.map((item, idx) => {
+                              const printifyProviderId = Number(formData.get(`provider-${idx}`));
+                              const printifyBlueprintId = Number(formData.get(`blueprint-${idx}`));
+                              const printifyVariantId = Number(formData.get(`variant-${idx}`));
+
+                              return {
+                                printifyProviderId,
+                                printifyBlueprintId,
+                                printifyVariantId,
+                              };
+                            });
+                            await handleSendToProvider(lineItems);
+                          }}
+                        >
+                          <div className="flex flex-col gap-4">
+                            {orderDetailState.order.lineItems.map((item, idx) => (
+                              <div key={item._id} className="flex items-center gap-2">
+                                <span className="w-32 truncate text-xs font-semibold">{item.productTitle}</span>
+                                <Input
+                                  name={`provider-${idx}`}
+                                  type="number"
+                                  placeholder="Provider ID"
+                                  required
+                                  className="w-32"
+                                />
+                                <Input
+                                  name={`blueprint-${idx}`}
+                                  type="number"
+                                  placeholder="Blueprint ID"
+                                  required
+                                  className="w-32"
+                                />
+                                <Input
+                                  name={`variant-${idx}`}
+                                  type="number"
+                                  placeholder="Variant ID"
+                                  required
+                                  className="w-32"
+                                />
+                              </div>
+                            ))}
+                          </div>
+                          <DialogFooter className="mt-6">
+                            <Button type="submit" className="bg-green-500 text-white hover:bg-green-600">
+                              Submit
+                            </Button>
+                          </DialogFooter>
+                        </form>
+                      </DialogContent>
+                    </Dialog>
+                  )} */}
+
+                  {/* Send to in production button */}
+                  {[RoleType.ADMIN, RoleType.WAREHOUSE].includes(user?.role) && (
+                    <Button
+                      className="ml-4"
+                      onClick={() => {
+                        handleSetInProductionStatus();
+                      }}
+                    >
+                      In Production
+                    </Button>
+                  )}
+
                   {[RoleType.ADMIN, RoleType.WAREHOUSE].includes(user?.role) && (
                     <>
                       <Button
@@ -921,6 +1087,7 @@ const OrderDetail = ({ orderId, onBackClick, handlePopstate }: OrderDetailProps)
 
                                     handleCreateShipmentOrder(validValues);
                                   } catch (error) {
+                                    console.log('🚀 ~ OrderDetail ~ error:', error);
                                     if (error instanceof ZodError) {
                                       console.error(error.issues);
                                       toast.error(`${error.issues[0]?.path.join('.')} ${error.issues[0].message}`);

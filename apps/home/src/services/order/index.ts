@@ -20,17 +20,20 @@ import { CustomAxios } from '@/utils';
 const getOrders = async (
   param?: PaginationState,
   search?: string,
+  email?: string,
   statusParamUrl?: string,
   productParamUrl?: string,
   myStore?: string,
   pickedDate?: string,
 ): Promise<OrdersResponse> => {
+  console.log("🚀 ~ param:", param)
   try {
     if (
       !param ||
       param.pageIndex === undefined ||
       param.pageSize === undefined ||
       search === undefined ||
+      email === undefined ||
       statusParamUrl === undefined ||
       productParamUrl === undefined ||
       myStore === undefined ||
@@ -62,6 +65,7 @@ const getOrders = async (
       `page=${pageIndex}`,
       `limit=${pageSize}`,
       `search=${search}`,
+      `email=${email}`,
       `status=${statusParamUrl}`,
       `productId=${productParamUrl}`,
       `storeCode=${myStore}`,
@@ -82,6 +86,7 @@ const getStatistics = async (
   from?: string,
   to?: string,
   storeCode?: string,
+  email?: string,
   productId?: string,
 ): Promise<OrderStatisticResponse> => {
   try {
@@ -90,6 +95,7 @@ const getStatistics = async (
       from,
       to,
       storeCode,
+      email,
       productId,
     });
 
@@ -442,6 +448,36 @@ export const cancelOrder = async (orderId: string): Promise<OrderResponse> => {
   }
 };
 
+export const sendToProvider = async (
+  orderId: string,
+  printifyLineItems:
+    | {
+        printifyProviderId: number;
+        printifyBlueprintId: number;
+        printifyVariantId: number;
+      }[]
+    | null = null,
+  priority: string = '',
+): Promise<OrderResponse> => {
+  try {
+    const { data } = await CustomAxios.post<OrderResponse>(
+      `orders/${orderId}/send-to-provider?priority=${priority}`,
+      {
+        printifyLineItems,
+      },
+      {
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      },
+    );
+
+    return data;
+  } catch (error) {
+    return handleAxiosError(error);
+  }
+};
+
 export const orderService = {
   getOrders,
   getOrderById,
@@ -469,4 +505,5 @@ export const orderService = {
   updateShippingAddress,
   setLineItemProduced,
   deleteOrder,
+  sendToProvider,
 };

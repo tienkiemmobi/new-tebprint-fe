@@ -370,7 +370,8 @@ const EditProduct = ({ paramId = '' }: EditProductProps) => {
           originalVariant.usShipPrice !== variant.usShipPrice ||
           originalVariant.baseCost !== variant.baseCost ||
           originalVariant.quantity !== variant.quantity ||
-          originalVariant.status !== variant.status
+          originalVariant.status !== variant.status ||
+          originalVariant.sku !== variant.sku
         ) {
           // @ts-ignore
           variant.isEdited = true;
@@ -587,7 +588,7 @@ const EditProduct = ({ paramId = '' }: EditProductProps) => {
           <span className="dsy-loading dsy-loading-spinner dsy-loading-lg"></span>
         </div>
       ) : (
-        <div className="mx-auto my-4 w-full max-w-[1150px] bg-transparent px-4">
+        <div className="mx-auto my-4 w-full bg-transparent px-4">
           <div className="flex max-w-full flex-1 flex-col items-start justify-between overflow-x-auto overflow-y-hidden bg-transparent md:flex-row">
             <div className="flex max-w-[65%] grow flex-col justify-center">
               <a href="/product-manager" className="mb-4 flex items-center gap-1">

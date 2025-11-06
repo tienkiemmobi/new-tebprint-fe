@@ -262,6 +262,13 @@ function OrdersTable({
               />
             )}
           </div>
+          {row.original.tracking?.shippingLabelUrl && (
+            <p className="text-green-500">
+              <a href={row.original.tracking?.shippingLabelUrl} target="_blank">
+                Label Order
+              </a>
+            </p>
+          )}
           <div className="flex items-center justify-between gap-2">
             <p className="text-sm text-warning/80">{row.original.name}</p>
             {row.original.systemNote && (
@@ -272,7 +279,7 @@ function OrdersTable({
               />
             )}
           </div>
-          <div>{row.original.store.name}</div>
+          <div>{row.original.store?.name}</div>
           <div>
             {row.original.privateNote && (
               <div className="flex items-center justify-between gap-2">
@@ -311,7 +318,7 @@ function OrdersTable({
       cell: ({ row }) => (
         <div>
           <p className="truncate">{row.original.lineItems.length} Items</p>
-          <p className="truncate">{row.original.lineItems.reduce((a, b) => a + b.quantity, 0)} Qty</p>
+          <p className="truncate">{row.original.lineItems.reduce((a, b) => a + b?.quantity, 0)} Qty</p>
         </div>
       ),
     },
@@ -350,6 +357,14 @@ function OrdersTable({
               row.original.shippingAddress.lastName || ''
             }`}</p>
             <div>
+              {row.original.tracking?.shippingLabelUrl && (
+                <a href={row.original.tracking.shippingLabelUrl} target="_blank">
+                  <p className="text-green-500">Label Order</p>
+                </a>
+              )}
+              {row.original.shipmentOrderId}
+            </div>
+            <div>
               {row.original.shipmentOrderId && (
                 <Copy
                   className="mr-1 inline"
@@ -383,7 +398,8 @@ function OrdersTable({
                 >
                   {row.original.tracking?.trackingNumber?.length && row.original.tracking?.trackingNumber?.length >= 8
                     ? `...${row.original.tracking?.trackingNumber?.slice(-8)}`
-                    : row.original.tracking?.trackingNumber}
+                    : row.original.tracking?.trackingNumber}{' '}
+                  {row.original.tracking?.carrierCode}
                 </a>
               )}
             </div>

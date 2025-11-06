@@ -9,7 +9,7 @@ import { CustomAxios } from '@/utils';
 const getProducts = async (param?: PaginationState, search?: string): Promise<ProductsResponse> => {
   try {
     if (!param || param.pageIndex === undefined || param.pageSize === undefined || search === undefined) {
-      const { data } = await CustomAxios.get<ProductsResponse>('/products');
+      const { data } = await CustomAxios.get<ProductsResponse>('/products?limit=1000');
 
       return data;
     }

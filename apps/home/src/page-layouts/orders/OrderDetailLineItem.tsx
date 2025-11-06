@@ -1,6 +1,6 @@
 /* eslint-disable unused-imports/no-unused-vars */
 import { format } from 'date-fns';
-import { CheckCircle2, ChevronDown, ChevronUp, Pencil } from 'lucide-react';
+import { CheckCircle2, ChevronDown, ChevronUp, Pencil, X, ZoomIn } from 'lucide-react';
 import { useCallback, useRef, useState } from 'react';
 import QuickPinchZoom, { make3dTransformValue } from 'react-quick-pinch-zoom';
 import { toast } from 'react-toastify';
@@ -38,6 +38,24 @@ type OrderDetailLineItemProps = {
   setOrderDetailState: React.Dispatch<React.SetStateAction<OrderDetailState>>;
 };
 
+const QC_BACKGROUND_COLOR = '#606060';
+
+const resolveImageSrc = (image: unknown) => {
+  if (!image || typeof image !== 'object') {
+    return NO_IMAGE;
+  }
+
+  if ('url' in image && typeof (image as { url?: string }).url === 'string') {
+    return (image as { url: string }).url;
+  }
+
+  if ('preview' in image && typeof (image as { preview?: string }).preview === 'string') {
+    return (image as { preview: string }).preview;
+  }
+
+  return NO_IMAGE;
+};
+
 const OrderDetailLineItem = ({
   lineItem,
   index,
@@ -53,6 +71,9 @@ const OrderDetailLineItem = ({
   const [currentLineItemId, setCurrentLineItemId] = useState<string | null>(null);
 
   const [shipmentEvent] = useState<ShipmentEvent[]>([]);
+
+  // Full screen image modal state
+  const [fullScreenImage, setFullScreenImage] = useState<{ src: string; alt: string } | null>(null);
 
   const handleLineItemSetProducedStatus = async (lineItemId: string) => {
     const response = await orderService.setLineItemProduced(lineItemId);
@@ -83,8 +104,8 @@ const OrderDetailLineItem = ({
   };
 
   // zoom
-  const frontArtworkRef = useRef();
-  const onFrontArtworkUpdate = useCallback(({ x, y, scale }) => {
+  const frontArtworkRef = useRef<HTMLImageElement | null>(null);
+  const onFrontArtworkUpdate = useCallback(({ x, y, scale }: { x: number; y: number; scale: number }) => {
     const { current: img } = frontArtworkRef;
 
     if (img) {
@@ -94,8 +115,8 @@ const OrderDetailLineItem = ({
     }
   }, []);
 
-  const backArtworkRef = useRef();
-  const onBackArtworkUpdate = useCallback(({ x, y, scale }) => {
+  const backArtworkRef = useRef<HTMLImageElement | null>(null);
+  const onBackArtworkUpdate = useCallback(({ x, y, scale }: { x: number; y: number; scale: number }) => {
     const { current: img } = backArtworkRef;
 
     if (img) {
@@ -104,6 +125,9 @@ const OrderDetailLineItem = ({
       img.style.setProperty('transform', value);
     }
   }, []);
+
+  const frontArtworkSrc = resolveImageSrc(lineItem.frontArtwork);
+  const backArtworkSrc = resolveImageSrc(lineItem.backArtwork);
 
   return (
     <>
@@ -134,12 +158,106 @@ const OrderDetailLineItem = ({
               <p className="text-sm text-[#686f71]"></p>
             </div>
 
+            <div className="mt-4 w-full rounded-[3px] border border-[#ebebeb] bg-[#f6f6f6] p-4">
+              <div className="mb-3 flex items-start gap-2">
+                <p className="flex-1 text-sm">
+                  Seller Note:{' '}
+                  {lineItem.sellerNote ? (
+                    lineItem.sellerNote
+                  ) : (
+                    <span className="text-[#949494]">No seller note</span>
+                  )}
+                </p>
+                {([RoleType.ADMIN, RoleType.SELLER] as string[]).includes(user?.role || '') && (
+                  <button
+                    onClick={() => {
+                      setOrderDetailState((pre) => ({
+                        ...pre,
+                        noteType: 'seller-note',
+                        lineItemIdForNote: lineItem._id,
+                      }));
+                      dialogOrderNoteRef.current?.triggerOpenDialog();
+                    }}
+                  >
+                    <Pencil className="mr-2 h-4 w-4" />
+                  </button>
+                )}
+              </div>
+
+              <div className="mb-3 flex items-start gap-2">
+                <p className="flex-1 text-sm">
+                  System Note:{' '}
+                  {lineItem.systemNote ? (
+                    lineItem.systemNote
+                  ) : (
+                    <span className="text-[#949494]">No system note</span>
+                  )}
+                </p>
+                {([RoleType.ADMIN, RoleType.MANAGER] as string[]).includes(user?.role || '') && (
+                  <button
+                    onClick={() => {
+                      setOrderDetailState((pre) => ({
+                        ...pre,
+                        noteType: 'system-note',
+                        lineItemIdForNote: lineItem._id,
+                      }));
+                      dialogOrderNoteRef.current?.triggerOpenDialog();
+                    }}
+                  >
+                    <Pencil className="mr-2 h-4 w-4" />
+                  </button>
+                )}
+              </div>
+
+              <div>
+                <p className="text-sm font-semibold text-[red]">Production Files</p>
+                {lineItem.externalFileLinks.length > 0 ? (
+                  lineItem.externalFileLinks.map((file) => (
+                    <p key={file.url}>
+                      <a
+                        href={file.url}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="text-sm text-[green] underline"
+                      >
+                        {file.fileName ?? file.url}
+                      </a>
+                    </p>
+                  ))
+                ) : (
+                  <p className="text-xs text-[#949494]">No production file uploaded</p>
+                )}
+              </div>
+            </div>
+
             <div id="portal" style={{ position: 'fixed', top: '50px', zIndex: 9999 }} />
             <div className="flex w-full flex-col justify-around">
               <div className="flex flex-col items-center">
-                <QuickPinchZoom onUpdate={onFrontArtworkUpdate} wheelScaleFactor={300}>
-                  <img ref={frontArtworkRef} src={lineItem.frontArtwork ? lineItem.frontArtwork.url : NO_IMAGE} />
-                </QuickPinchZoom>
+                <div
+                  className="relative flex w-full max-w-[420px] justify-center rounded-[4px] p-4"
+                  style={{ backgroundColor: QC_BACKGROUND_COLOR }}
+                >
+                  <QuickPinchZoom onUpdate={onFrontArtworkUpdate} wheelScaleFactor={300}>
+                    <img
+                      ref={frontArtworkRef}
+                      src={frontArtworkSrc}
+                      alt={lineItem.product?.title ? `${lineItem.product.title} front artwork` : 'Front artwork preview'}
+                      className="max-h-[400px] w-full object-contain"
+                    />
+                  </QuickPinchZoom>
+                  <button
+                    onClick={() =>
+                      setFullScreenImage({
+                        src: frontArtworkSrc,
+                        alt: lineItem.product?.title ? `${lineItem.product.title} front artwork` : 'Front artwork preview',
+                      })
+                    }
+                    className="absolute right-2 top-2 flex h-8 w-8 items-center justify-center rounded-full bg-white/90 shadow-lg transition-all hover:bg-white hover:scale-110"
+                    title="View full screen"
+                  >
+                    <ZoomIn className="h-4 w-4 text-gray-700" />
+                  </button>
+                </div>
                 <div className="mb-2 mt-6 flex items-center gap-4">
                   <p className="text-base">Front Artwork</p>
                 </div>
@@ -147,9 +265,37 @@ const OrderDetailLineItem = ({
 
               {lineItem.backArtwork && (
                 <div className="flex flex-col items-center">
-                  <QuickPinchZoom onUpdate={onBackArtworkUpdate} wheelScaleFactor={300}>
-                    <img ref={backArtworkRef} src={lineItem.backArtwork ? lineItem.backArtwork.url : NO_IMAGE} />
-                  </QuickPinchZoom>
+                  <div
+                    className="relative flex w-full max-w-[520px] justify-center rounded-[4px] p-4"
+                    style={{ backgroundColor: QC_BACKGROUND_COLOR }}
+                  >
+                    <QuickPinchZoom onUpdate={onBackArtworkUpdate} wheelScaleFactor={300}>
+                      <img
+                        ref={backArtworkRef}
+                        src={backArtworkSrc}
+                        alt={
+                          lineItem.product?.title
+                            ? `${lineItem.product.title} back artwork`
+                            : 'Back artwork preview'
+                        }
+                        className="max-h-[480px] w-full object-contain"
+                      />
+                    </QuickPinchZoom>
+                    <button
+                      onClick={() =>
+                        setFullScreenImage({
+                          src: backArtworkSrc,
+                          alt: lineItem.product?.title
+                            ? `${lineItem.product.title} back artwork`
+                            : 'Back artwork preview',
+                        })
+                      }
+                      className="absolute right-2 top-2 flex h-8 w-8 items-center justify-center rounded-full bg-white/90 shadow-lg transition-all hover:bg-white hover:scale-110"
+                      title="View full screen"
+                    >
+                      <ZoomIn className="h-4 w-4 text-gray-700" />
+                    </button>
+                  </div>
                   <div className="mb-2 mt-6 flex items-center gap-4">
                     <p className="text-base">Back Artwork</p>
                   </div>
@@ -224,57 +370,6 @@ const OrderDetailLineItem = ({
             <p className="flex items-center text-base">
               {/* <a href="#">{orderDetailState.order?.orderDetail.productionCost}</a> */}
             </p>
-          </div>
-          <div className="mb-2 flex justify-between">
-            <p className="text-sm">Seller Note: {lineItem.sellerNote}</p>
-            {([RoleType.ADMIN, RoleType.SELLER] as string[]).includes(user?.role || '') && (
-              <button
-                onClick={() => {
-                  setOrderDetailState((pre) => ({
-                    ...pre,
-                    noteType: 'seller-note',
-                    lineItemIdForNote: lineItem._id,
-                  }));
-                  dialogOrderNoteRef.current?.triggerOpenDialog();
-                }}
-              >
-                <Pencil className="mr-2 h-4 w-4" />
-              </button>
-            )}
-          </div>
-          <div className="mb-2 flex justify-between">
-            <p className="text-sm">System Note: {lineItem.systemNote}</p>
-            {([RoleType.ADMIN, RoleType.MANAGER] as string[]).includes(user?.role || '') && (
-              <button
-                onClick={() => {
-                  setOrderDetailState((pre) => ({
-                    ...pre,
-                    noteType: 'system-note',
-                    lineItemIdForNote: lineItem._id,
-                  }));
-                  dialogOrderNoteRef.current?.triggerOpenDialog();
-                }}
-              >
-                <Pencil className="mr-2 h-4 w-4" />
-              </button>
-            )}
-          </div>
-
-          <div className="mb-2">
-            <p className="text-sm text-[red]">Production Files: {lineItem.systemNote}</p>
-            {lineItem.externalFileLinks.map((file) => (
-              <p>
-                <a
-                  href={file.url}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="text-sm text-[green] underline"
-                  key={file._id}
-                >
-                  {file.fileName}
-                </a>
-              </p>
-            ))}
           </div>
 
           <div className="mb-2 flex justify-center"></div>
@@ -384,6 +479,57 @@ const OrderDetailLineItem = ({
           </div>
         </div>
       </div>
+
+      {/* Full Screen Image Modal - Medium-inspired */}
+      {fullScreenImage && (
+        <div
+          className="fixed inset-0 z-[10000] flex items-center justify-center bg-[#606060]/95 backdrop-blur-sm"
+          onClick={() => setFullScreenImage(null)}
+          style={{ animation: 'fadeIn 0.2s ease-out' }}
+        >
+          <button
+            onClick={() => setFullScreenImage(null)}
+            className="absolute right-4 top-4 z-10 flex h-10 w-10 items-center justify-center rounded-full bg-white/10 text-white transition-all hover:bg-white/20 hover:scale-110"
+            title="Close"
+          >
+            <X className="h-6 w-6" />
+          </button>
+          <div
+            className="max-h-[95vh] max-w-[95vw] p-8"
+            onClick={(e) => e.stopPropagation()}
+            style={{ animation: 'zoomIn 0.3s ease-out' }}
+          >
+            <img
+              src={fullScreenImage.src}
+              alt={fullScreenImage.alt}
+              className="max-h-full max-w-full object-contain"
+              style={{ boxShadow: '0 20px 60px rgba(170, 153, 153, 0.5)' }}
+            />
+          </div>
+        </div>
+      )}
+
+      <style>{`
+        @keyframes fadeIn {
+          from {
+            opacity: 0;
+          }
+          to {
+            opacity: 1;
+          }
+        }
+        
+        @keyframes zoomIn {
+          from {
+            opacity: 0;
+            transform: scale(0.95);
+          }
+          to {
+            opacity: 1;
+            transform: scale(1);
+          }
+        }
+      `}</style>
     </>
   );
 };

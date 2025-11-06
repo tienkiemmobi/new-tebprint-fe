@@ -45,7 +45,7 @@ const ProductItem = (props: ProductItemProps) => {
           </div>
           <div className="p-1">
             <p className="truncate pt-2 hover:text-primary">{title}</p>
-            <p className="pt-1 text-slate-500">From ${price ? price.toFixed(2) : 0}</p>
+            <p className="pt-1 text-slate-500">From ${price ? Number(price).toFixed(2) : 0}</p>
           </div>
         </a>
       </div>

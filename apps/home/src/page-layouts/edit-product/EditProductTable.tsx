@@ -151,7 +151,7 @@ export function EditProductTable({ isCreateNewProduct, variants, setEditProductS
     });
   };
 
-  const editableColumns = ['price', 'usPrice', 'vnShipPrice', 'usShipPrice', 'baseCost', 'quantity'];
+  const editableColumns = ['price', 'usPrice', 'vnShipPrice', 'usShipPrice', 'baseCost', 'quantity', 'sku'];
   const withCurrencyColumns = ['price', 'usPrice', 'vnShipPrice', 'usShipPrice', 'baseCost'];
   const defaultColumn: Partial<ColumnDef<ProductVariant>> = {
     cell: ({ getValue, row: { index }, column: { id }, table }) => {
@@ -195,6 +195,12 @@ export function EditProductTable({ isCreateNewProduct, variants, setEditProductS
           );
         }
 
+        if (id === 'sku') {
+          return (
+            <Input type="text" value={value as string} onChange={(e) => setValue(e.target.value)} onBlur={onBlur} />
+          );
+        }
+
         return (
           <Input type="number" value={value as string} onChange={(e) => setValue(e.target.value)} onBlur={onBlur} />
         );
@@ -228,6 +234,10 @@ export function EditProductTable({ isCreateNewProduct, variants, setEditProductS
     {
       accessorKey: 'sku',
       header: 'Sku',
+    },
+    {
+      accessorKey: 'code',
+      header: 'code',
     },
     {
       accessorKey: 'baseCost',
