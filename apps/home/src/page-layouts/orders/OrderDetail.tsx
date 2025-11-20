@@ -28,7 +28,6 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-  Input,
   Popover,
   PopoverContent,
   PopoverTrigger,
@@ -42,11 +41,10 @@ import {
   Textarea,
 } from 'ui';
 import { cn } from 'ui/lib/utils';
-import { ZodError } from 'zod';
 
 import { RoleType } from '@/constants';
 import type { CancelReasonDto, LineItem, Order, OrderIssueDto, PackageOrderDto } from '@/interfaces';
-import { CancelReasonZodSchema, OrderIssueZodSchema, PackageOrderZodSchema } from '@/interfaces';
+import { CancelReasonZodSchema, OrderIssueZodSchema } from '@/interfaces';
 import { orderService } from '@/services';
 import { useAuthStore } from '@/store';
 
@@ -54,6 +52,7 @@ import { EditShippingAddressDialog, type EditShippingAddressDialogRef } from './
 import { OrderDetailLineItem } from './OrderDetailLineItem';
 import type { OrderNoteDialogRef } from './OrderNoteDialog';
 import { OrderNoteDialog } from './OrderNoteDialog';
+import { PackageDialog } from './PackageDialog';
 
 type OrderDetailProps = {
   orderId: string;
@@ -158,66 +157,6 @@ const OrderDetail = ({ orderId, onBackClick, handlePopstate }: OrderDetailProps)
   const [onosSkuValue, setOnosSkuValue] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
-  const shippingServices = [
-    {
-      id: 1,
-      name: 'OnosExpress',
-    },
-    {
-      id: 2,
-      name: 'AnanBay',
-    },
-    {
-      id: 3,
-      name: 'NSLog',
-    },
-  ];
-
-  const tebPackages = [
-    {
-      id: '1',
-      name: '11x10x2 (50g)',
-      weight: 50,
-      width: 11,
-      height: 10,
-      length: 2,
-    },
-    {
-      id: '2',
-      name: '14x14x3 (100g)',
-      weight: 100,
-      width: 14,
-      height: 14,
-      length: 3,
-    },
-    {
-      id: '3',
-      name: '17x17x3 (150g)',
-      weight: 150,
-      width: 17,
-      height: 17,
-      length: 3,
-    },
-    {
-      id: '4',
-      name: '21x21x2 (180g)',
-      weight: 180,
-      width: 21,
-      height: 21,
-      length: 2,
-    },
-    {
-      id: '5',
-      name: '27x21x1.5 (250g)',
-      weight: 250,
-      width: 27,
-      height: 21,
-      length: 1.5,
-    },
-  ];
-
-  // const [currentTebPackage, setCurrentTebPackage] = useState<(typeof tebPackages)[number] | null>(null);
-
   const noteValue = useMemo(() => {
     if (!orderDetailState.noteType) return '';
 
@@ -250,17 +189,6 @@ const OrderDetail = ({ orderId, onBackClick, handlePopstate }: OrderDetailProps)
     description: '',
   };
 
-  const packageOrderDefaultValues: PackageOrderDto = {
-    service: 'AnanBay',
-    packageId: '',
-    weight: 12,
-    width: 12,
-    height: 12,
-    length: 12,
-    skipAddressCheck: false,
-    scan: false,
-  };
-
   const cancelOrderForm = useForm({
     resolver: zodResolver(CancelReasonZodSchema),
     defaultValues: defaultValuesCancel,
@@ -273,15 +201,9 @@ const OrderDetail = ({ orderId, onBackClick, handlePopstate }: OrderDetailProps)
     mode: 'all',
   });
 
-  const packageOrderForm = useForm<PackageOrderDto>({
-    resolver: zodResolver(OrderIssueZodSchema),
-    defaultValues: packageOrderDefaultValues,
-    mode: 'all',
-  });
-
   const onSubmitCancel = async (data: CancelReasonDto) => {
     const OrderId = orderDetailState.order._id as string;
-    const cancelOrderResponse = await orderService.putCancelOrder(data, OrderId);
+    const cancelOrderResponse = await orderService.cancelOrder(OrderId);
 
     if (!cancelOrderResponse.success || !cancelOrderResponse.data) {
       toast.error(cancelOrderResponse.message);
@@ -320,24 +242,27 @@ const OrderDetail = ({ orderId, onBackClick, handlePopstate }: OrderDetailProps)
     toast.success(response.message);
   };
 
-  const handleCreateShipmentOrder = async (data: {
-    weight: number;
-    width: number;
-    height: number;
-    length: number;
-    skipAddressCheck: boolean;
-    service: string;
-    scan?: boolean;
-  }) => {
+  const handleCreateShipmentOrder = async (
+    packageData: PackageOrderDto & { onosProductId?: string; onosProductSku?: string; onosProductName?: string },
+  ) => {
+    if (!packageData.onosProductId || !packageData.onosProductSku || !packageData.onosProductName) {
+      toast.error('Please select an Onos SKU');
+
+      return;
+    }
+
     try {
       setIsLoading(true);
       const currentOrderId = orderDetailState.order?._id as string;
-      const onosSku = onosSkus.find((myOnosSku) => myOnosSku.sku.toLowerCase() === onosSkuValue.split('-')[0]?.trim());
       const response = await orderService.createShipmentOrder(currentOrderId, {
-        ...data,
-        onosProductId: onosSku!.id,
-        onosProductSku: onosSku!.sku,
-        onosProductName: onosSku!.name,
+        weight: packageData.weight,
+        width: packageData.width,
+        height: packageData.height,
+        length: packageData.length,
+        skipAddressCheck: packageData.skipAddressCheck,
+        onosProductId: packageData.onosProductId,
+        onosProductSku: packageData.onosProductSku,
+        onosProductName: packageData.onosProductName,
       });
 
       if (!response.success || !response.data) {
@@ -562,32 +487,6 @@ const OrderDetail = ({ orderId, onBackClick, handlePopstate }: OrderDetailProps)
     fetchOnosProducts();
   }, []);
 
-  useEffect(() => {
-    if (!onosSkuValue) {
-      return;
-    }
-    const onosSku = onosSkus.find((myOnosSku) => myOnosSku.sku.toLowerCase() === onosSkuValue.split('-')[0]?.trim());
-
-    packageOrderForm.setValue('weight', onosSku?.weight || 0);
-    packageOrderForm.setValue('height', onosSku?.height || 0);
-    packageOrderForm.setValue('width', onosSku?.width || 0);
-    packageOrderForm.setValue('length', onosSku?.length || 0);
-  }, [onosSkuValue]);
-
-  useEffect(() => {
-    const currentPackage = tebPackages.find((myPackage) => myPackage.id === packageOrderForm.watch('packageId'));
-
-    if (!currentPackage) {
-      return;
-    }
-
-    packageOrderForm.setValue('weight', currentPackage!.weight);
-    packageOrderForm.setValue('height', currentPackage!.height);
-    packageOrderForm.setValue('width', currentPackage!.width);
-    packageOrderForm.setValue('length', currentPackage!.length);
-    // @ts-expect-error packageId
-  }, packageOrderForm.watch('packageId'));
-
   return (
     <>
       <div className="my-1 flex cursor-pointer items-center gap-1" onClick={() => onBackClick()}>
@@ -782,7 +681,7 @@ const OrderDetail = ({ orderId, onBackClick, handlePopstate }: OrderDetailProps)
                   )} */}
 
                   {/* Send to in production button */}
-                  {[RoleType.ADMIN, RoleType.WAREHOUSE].includes(user?.role) && (
+                  {[RoleType.ADMIN, RoleType.WAREHOUSE, RoleType.DESIGNER].includes(user?.role) && (
                     <Button
                       className="ml-4"
                       onClick={() => {
@@ -847,260 +746,19 @@ const OrderDetail = ({ orderId, onBackClick, handlePopstate }: OrderDetailProps)
                       </div>
 
                       {/* Package Dialog */}
-                      <Dialog
-                        onOpenChange={() => {
-                          packageOrderForm.setValue('skipAddressCheck', false);
-                        }}
-                      >
-                        <DialogTrigger className="ml-4 inline rounded-[5px] border bg-green-500 p-2 text-base text-white hover:bg-green-700 hover:text-white disabled:opacity-60">
-                          Package
-                        </DialogTrigger>
-                        <DialogContent>
-                          <DialogHeader>
-                            <DialogTitle>Package Order</DialogTitle>
-                          </DialogHeader>
-                          <Form {...packageOrderForm}>
-                            <div className="grid gap-4 py-4">
-                              <FormField
-                                // control={packageOrderForm.control}
-                                name="service"
-                                render={({ field }) => (
-                                  <FormItem>
-                                    <div className="grid grid-cols-4 items-center gap-4">
-                                      <FormLabel className="text-right">Service</FormLabel>
-                                      <Select defaultValue="AnanBay" required={true} onValueChange={field.onChange}>
-                                        <FormControl className="col-span-3">
-                                          <SelectTrigger>
-                                            <SelectValue placeholder="Package" />
-                                          </SelectTrigger>
-                                        </FormControl>
-                                        <SelectContent>
-                                          {shippingServices.map((service, index) => {
-                                            return (
-                                              <SelectItem key={`${service.id}`} value={service.name}>
-                                                {service.name}
-                                              </SelectItem>
-                                            );
-                                          })}
-                                        </SelectContent>
-                                      </Select>
-                                    </div>
-                                    <div className="grid grid-cols-4 items-center gap-4">
-                                      <FormLabel className="text-right"></FormLabel>
-                                      <FormMessage className="col-span-3" />
-                                    </div>
-                                  </FormItem>
-                                )}
-                              />
-                              <FormField
-                                // control={packageOrderForm.control}
-                                name="packageId"
-                                render={({ field }) => (
-                                  <FormItem>
-                                    <div className="grid grid-cols-4 items-center gap-4">
-                                      <FormLabel className="text-right">Package</FormLabel>
-                                      <Select required={true} onValueChange={field.onChange}>
-                                        <FormControl className="col-span-3">
-                                          <SelectTrigger>
-                                            <SelectValue placeholder="Package" />
-                                          </SelectTrigger>
-                                        </FormControl>
-                                        <SelectContent>
-                                          {tebPackages.map((tebPackage, index) => {
-                                            return (
-                                              <SelectItem key={`${tebPackage.id}`} value={tebPackage.id}>
-                                                {tebPackage.name}
-                                              </SelectItem>
-                                            );
-                                          })}
-                                        </SelectContent>
-                                      </Select>
-                                    </div>
-                                    <div className="grid grid-cols-4 items-center gap-4">
-                                      <FormLabel className="text-right"></FormLabel>
-                                      <FormMessage className="col-span-3" />
-                                    </div>
-                                  </FormItem>
-                                )}
-                              />
-                              <FormField
-                                control={packageOrderForm.control}
-                                name="weight"
-                                render={({ field }) => (
-                                  <FormItem>
-                                    <div className="grid grid-cols-4 items-center gap-4">
-                                      <FormLabel className="col-span-1 text-right">Weight</FormLabel>
-                                      <FormControl className="col-span-3">
-                                        <Input
-                                          type="text"
-                                          required={true}
-                                          placeholder="Weight"
-                                          className="resize-none"
-                                          {...field}
-                                        />
-                                      </FormControl>
-                                    </div>
-                                    <div className="grid grid-cols-4 items-center gap-4">
-                                      <FormLabel className="text-right"></FormLabel>
-                                      <FormMessage className="col-span-3" />
-                                    </div>
-                                  </FormItem>
-                                )}
-                              />
-                              <FormField
-                                control={packageOrderForm.control}
-                                name="width"
-                                render={({ field }) => (
-                                  <FormItem>
-                                    <div className="grid grid-cols-4 items-center gap-4">
-                                      <FormLabel className="col-span-1 text-right">Width</FormLabel>
-                                      <FormControl className="col-span-3">
-                                        <Input
-                                          type="text"
-                                          required={true}
-                                          placeholder="Width"
-                                          className="resize-none"
-                                          {...field}
-                                        />
-                                      </FormControl>
-                                    </div>
-                                    <div className="grid grid-cols-4 items-center gap-4">
-                                      <FormLabel className="text-right"></FormLabel>
-                                      <FormMessage className="col-span-3" />
-                                    </div>
-                                  </FormItem>
-                                )}
-                              />
-                              <FormField
-                                control={packageOrderForm.control}
-                                name="height"
-                                render={({ field }) => (
-                                  <FormItem>
-                                    <div className="grid grid-cols-4 items-center gap-4">
-                                      <FormLabel className="col-span-1 text-right">Height</FormLabel>
-                                      <FormControl className="col-span-3">
-                                        <Input
-                                          type="text"
-                                          required={true}
-                                          placeholder="Height"
-                                          className="resize-none"
-                                          {...field}
-                                        />
-                                      </FormControl>
-                                    </div>
-                                    <div className="grid grid-cols-4 items-center gap-4">
-                                      <FormLabel className="text-right"></FormLabel>
-                                      <FormMessage className="col-span-3" />
-                                    </div>
-                                  </FormItem>
-                                )}
-                              />
-                              <FormField
-                                control={packageOrderForm.control}
-                                name="length"
-                                render={({ field }) => (
-                                  <FormItem>
-                                    <div className="grid grid-cols-4 items-center gap-4">
-                                      <FormLabel className="col-span-1 text-right">Length</FormLabel>
-                                      <FormControl className="col-span-3">
-                                        <Input
-                                          type="text"
-                                          required={true}
-                                          placeholder="Length"
-                                          className="resize-none"
-                                          {...field}
-                                        />
-                                      </FormControl>
-                                    </div>
-                                    <div className="grid grid-cols-4 items-center gap-4">
-                                      <FormLabel className="text-right"></FormLabel>
-                                      <FormMessage className="col-span-3" />
-                                    </div>
-                                  </FormItem>
-                                )}
-                              />
-                              <FormField
-                                control={packageOrderForm.control}
-                                name="skipAddressCheck"
-                                render={({ field }) => (
-                                  <FormItem>
-                                    <div className="grid grid-cols-4 items-center gap-4">
-                                      <FormLabel className="col-span-1 text-right">Skip Address Check</FormLabel>
-                                      <FormControl className="col-span-3">
-                                        <Input
-                                          onChange={(e) => {
-                                            field.onChange(e);
-                                          }}
-                                          checked={field.value}
-                                          type="checkbox"
-                                          required={true}
-                                          className="resize-none"
-                                          // {...field}
-                                        />
-                                      </FormControl>
-                                    </div>
-                                    <div className="grid grid-cols-4 items-center gap-4">
-                                      <FormLabel className="text-right"></FormLabel>
-                                      <FormMessage className="col-span-3" />
-                                    </div>
-                                  </FormItem>
-                                )}
-                              />
-                              <FormField
-                                control={packageOrderForm.control}
-                                name="scan"
-                                render={({ field }) => (
-                                  <FormItem>
-                                    <div className="grid grid-cols-4 items-center gap-4">
-                                      <FormLabel className="col-span-1 text-right">Scan?</FormLabel>
-                                      <FormControl className="col-span-3">
-                                        <Input
-                                          onChange={(e) => {
-                                            field.onChange(e);
-                                          }}
-                                          checked={field.value}
-                                          type="checkbox"
-                                          required={true}
-                                          className="resize-none"
-                                          // {...field}
-                                        />
-                                      </FormControl>
-                                    </div>
-                                    <div className="grid grid-cols-4 items-center gap-4">
-                                      <FormLabel className="text-right"></FormLabel>
-                                      <FormMessage className="col-span-3" />
-                                    </div>
-                                  </FormItem>
-                                )}
-                              />
-                            </div>
-                            <DialogFooter>
-                              <Button
-                                type="submit"
-                                disabled={isLoading}
-                                className={`rounded-[3px] bg-green-500 px-3 py-2 text-white hover:bg-green-600 ${
-                                  isLoading ? 'dsy-loading' : ''
-                                }`}
-                                onClick={() => {
-                                  try {
-                                    const validValues = PackageOrderZodSchema.parse(packageOrderForm.getValues());
-
-                                    handleCreateShipmentOrder(validValues);
-                                  } catch (error) {
-                                    console.log('🚀 ~ OrderDetail ~ error:', error);
-                                    if (error instanceof ZodError) {
-                                      console.error(error.issues);
-                                      toast.error(`${error.issues[0]?.path.join('.')} ${error.issues[0].message}`);
-                                    }
-                                  }
-                                }}
-                              >
-                                Confirm
-                              </Button>
-                            </DialogFooter>
-                          </Form>
-                        </DialogContent>
-                      </Dialog>
+                      <PackageDialog
+                        onosSkus={onosSkus}
+                        onosSkuValue={onosSkuValue}
+                        onOnosSkuChange={setOnosSkuValue}
+                        onSubmit={handleCreateShipmentOrder}
+                        isLoading={isLoading}
+                        trigger={
+                          <Button className="ml-4 inline rounded-[5px] border bg-green-500 p-2 text-base text-white hover:bg-green-700 hover:text-white disabled:opacity-60">
+                            Package
+                          </Button>
+                        }
+                        title="Package Order"
+                      />
 
                       <Button
                         className="ml-4"

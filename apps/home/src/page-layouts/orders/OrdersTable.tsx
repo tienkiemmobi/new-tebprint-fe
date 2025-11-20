@@ -18,7 +18,7 @@ import {
   useReactTable,
 } from '@tanstack/react-table';
 import { format } from 'date-fns';
-import { AlertCircle, AlertOctagon, AlertTriangle, Copy, Dot, ShieldAlert } from 'lucide-react';
+import { AlertCircle, AlertOctagon, AlertTriangle, Check, ChevronsUpDown, Copy, Dot, ShieldAlert } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { toast } from 'react-toastify';
@@ -36,6 +36,11 @@ import {
   AlertDialogTrigger,
   Button,
   Checkbox,
+  Command as CommandUI,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
   CustomTooltip,
   Dialog,
   DialogContent,
@@ -54,6 +59,9 @@ import {
   FormMessage,
   NoOrderResult,
   Pagination,
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
   Select,
   SelectContent,
   SelectItem,
@@ -66,12 +74,15 @@ import {
   TableHeader,
   TableRow,
 } from 'ui';
+import { cn } from 'ui/lib/utils';
 import { z } from 'zod';
 
 import { RoleType } from '@/constants';
-import type { Order } from '@/interfaces';
+import type { Order, PackageOrderDto } from '@/interfaces';
 import { orderService, updateStatus } from '@/services';
 import { useAuthStore } from '@/store';
+
+import { PackageDialog } from './PackageDialog';
 
 type OrdersTableProps = {
   data: Order[];
@@ -80,6 +91,7 @@ type OrdersTableProps = {
   paramUrl: ParamUrl[];
   pagination: PaginationState;
   resetCheckBox: boolean;
+  selectedOrders?: string[];
   handleSelectAllOrders: (checked: boolean) => void;
   handleClickRow: (orderId?: string) => void;
   handleSelectedOrder: (id: string) => void;
@@ -87,6 +99,8 @@ type OrdersTableProps = {
   setIsParamLoaded: React.Dispatch<React.SetStateAction<boolean>>;
   setResetCheckbox: React.Dispatch<React.SetStateAction<boolean>>;
   setPagination: React.Dispatch<React.SetStateAction<PaginationState>>;
+  designerEmail?: string;
+  onDesignerEmailChange?: (email: string) => void;
 };
 
 type OrderStatus = {
@@ -126,9 +140,12 @@ function OrdersTable({
   setSearchValue,
   handleSelectAllOrders,
   resetCheckBox,
+  selectedOrders = [],
   handleClickRow,
   handleSelectedOrder,
   setResetCheckbox,
+  designerEmail = '',
+  onDesignerEmailChange,
 }: OrdersTableProps) {
   const { user } = useAuthStore.getState();
 
@@ -143,6 +160,25 @@ function OrdersTable({
   const [isUpdateStatusDialogOpen, setIsUpdateStatusDialogOpen] = useState(false);
 
   const [isConfirmDialogOpen, setIsConfirmDialogOpen] = useState(false);
+
+  // Bulk shipment states
+  const [onosSkus, setOnosSkus] = useState<
+    { sku: string; name: string; id: string; weight: number; width: number; height: number; length: number }[]
+  >([]);
+  const [onosSkuComboboxOpen, setOnosSkuComboboxOpen] = useState(false);
+  const [onosSkuValue, setOnosSkuValue] = useState('');
+  const [isPackageDialogOpen, setIsPackageDialogOpen] = useState(false);
+  const [isBulkShipmentLoading, setIsBulkShipmentLoading] = useState(false);
+
+  // Assign designer states
+  const [selectedDesignerEmail, setSelectedDesignerEmail] = useState('');
+  const [isAssignDesignerLoading, setIsAssignDesignerLoading] = useState(false);
+  const [assignDesignerResults, setAssignDesignerResults] = useState<
+    { externalId: string; success: boolean; message: string }[] | null
+  >(null);
+  const [isResultsDialogOpen, setIsResultsDialogOpen] = useState(false);
+
+  const DESIGNER_EMAILS = ['design1@tebprint.com', 'design2@tebprint.com', 'design3@tebprint.com'];
 
   const updateStatusForm = useForm({
     resolver: zodResolver(z.object({ status: z.string() })),
@@ -226,7 +262,11 @@ function OrdersTable({
             width="168"
             height="168"
             // src={row.original.tempFrontArtworkUrl ? row.original.tempFrontArtworkUrl : NO_IMAGE}
-            src={row.original.lineItems[0]?.frontArtwork ? row.original.lineItems[0]?.frontArtwork : NO_IMAGE}
+            src={
+              row.original.lineItems[0]?.frontArtworkPreviewUrl
+                ? row.original.lineItems[0]?.frontArtworkPreviewUrl
+                : NO_IMAGE
+            }
           />
         </a>
       ),
@@ -417,6 +457,7 @@ function OrdersTable({
             <p className="truncate">{row.original.user?.email}</p>
 
             <p className="truncate">Designer:{row.original.designerName}</p>
+            <p className="truncate">{row.original.designer?.email}</p>
           </div>
         );
       },
@@ -567,9 +608,244 @@ function OrdersTable({
     }
   }, [resetCheckBox]);
 
+  // Fetch Onos products for bulk shipment
+  useEffect(() => {
+    if (![RoleType.ADMIN, RoleType.WAREHOUSE].includes(user?.role)) {
+      return;
+    }
+
+    const fetchOnosProducts = async () => {
+      const data = await orderService.getOnosProducts();
+      if (!data.success || !data.data) {
+        toast.error(data.message);
+
+        return;
+      }
+
+      setOnosSkus(data.data);
+    };
+
+    fetchOnosProducts();
+  }, [user?.role]);
+
+  const handleBulkCreateShipment = async (
+    packageData: PackageOrderDto & { onosProductId?: string; onosProductSku?: string; onosProductName?: string },
+  ) => {
+    if (selectedOrders.length === 0) {
+      toast.error('Please select at least one order');
+
+      return;
+    }
+
+    if (!packageData.onosProductId || !packageData.onosProductSku || !packageData.onosProductName) {
+      toast.error('Please select an Onos SKU');
+
+      return;
+    }
+
+    try {
+      setIsBulkShipmentLoading(true);
+      const response = await orderService.bulkCreateShipment(selectedOrders, {
+        onosProductId: packageData.onosProductId,
+        onosProductSku: packageData.onosProductSku,
+        onosProductName: packageData.onosProductName,
+        weight: packageData.weight,
+        width: packageData.width,
+        height: packageData.height,
+        length: packageData.length,
+        skipAddressCheck: packageData.skipAddressCheck,
+        service: packageData.service,
+        scan: packageData.scan,
+      });
+
+      if (response.success) {
+        toast.success(`Bulk shipment created for ${selectedOrders.length} order(s)`);
+        setIsPackageDialogOpen(false);
+        setOnosSkuValue('');
+        // Clear selections
+        handleSelectAllOrders(false);
+      } else {
+        toast.error(response.message || 'Failed to create bulk shipment');
+      }
+    } catch (error) {
+      toast.error((error as Error).message || 'Failed to create bulk shipment');
+    } finally {
+      setIsBulkShipmentLoading(false);
+    }
+  };
+
+  const handleAssignDesigner = async () => {
+    if (selectedOrders.length === 0) {
+      toast.error('Please select at least one order');
+
+      return;
+    }
+
+    if (!selectedDesignerEmail) {
+      toast.error('Please select a designer');
+
+      return;
+    }
+
+    try {
+      setIsAssignDesignerLoading(true);
+      const response = await orderService.assignDesigner(selectedOrders, selectedDesignerEmail);
+
+      if (response.success && response.data?.results) {
+        setAssignDesignerResults(response.data.results);
+        setIsResultsDialogOpen(true);
+        // Clear selections after successful assignment
+        const hasAnySuccess = response.data.results.some((r) => r.success);
+        if (hasAnySuccess) {
+          handleSelectAllOrders(false);
+          setSelectedDesignerEmail('');
+        }
+      } else {
+        toast.error(response.message || 'Failed to assign designer');
+      }
+    } catch (error) {
+      toast.error((error as Error).message || 'Failed to assign designer');
+    } finally {
+      setIsAssignDesignerLoading(false);
+    }
+  };
+
+  const hasSelectedOrders = selectedOrders.length > 0;
+  const showBulkShipmentUI =
+    hasSelectedOrders && user?.role && [RoleType.ADMIN, RoleType.WAREHOUSE].includes(user.role);
+  const showAssignDesignerUI =
+    hasSelectedOrders && user?.role && [RoleType.ADMIN, RoleType.MANAGER, RoleType.WAREHOUSE].includes(user.role);
+  const showDesignerFilter = user?.role && [RoleType.ADMIN, RoleType.WAREHOUSE, RoleType.MANAGER].includes(user.role);
+
   return (
     <>
       <div className="w-full">
+        {showDesignerFilter && (
+          <div className="mb-4 flex items-center gap-4 rounded-md border bg-gray-50 p-4">
+            <div className="flex-1">
+              <Select
+                value={designerEmail || 'all'}
+                onValueChange={(value) => {
+                  if (onDesignerEmailChange) {
+                    onDesignerEmailChange(value === 'all' ? '' : value);
+                  }
+                }}
+              >
+                <SelectTrigger className="w-full max-w-[300px]">
+                  <SelectValue placeholder="Filter by Designer..." />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Designers</SelectItem>
+                  {DESIGNER_EMAILS.map((email) => (
+                    <SelectItem key={`filter-designer-${email}`} value={email}>
+                      {email}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+        )}
+        {(showBulkShipmentUI || showAssignDesignerUI) && (
+          <div className="mb-4 space-y-3 rounded-md border bg-gray-50 p-4">
+            {showBulkShipmentUI && (
+              <div className="flex items-center gap-4">
+                <div className="flex-1">
+                  <Popover open={onosSkuComboboxOpen} onOpenChange={setOnosSkuComboboxOpen}>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant="outline"
+                        role="combobox"
+                        aria-expanded={onosSkuComboboxOpen}
+                        className="w-full justify-between"
+                      >
+                        {onosSkuValue.split('-')[0]?.trim() || 'Select Onos SKU...'}
+                        <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-full p-0">
+                      <CommandUI>
+                        <CommandInput placeholder="Select Onos SKU..." />
+                        <CommandEmpty>No SKU found.</CommandEmpty>
+                        <CommandGroup className="h-[300px] overflow-y-scroll">
+                          {onosSkus.map((sku) => (
+                            <CommandItem
+                              key={sku.sku}
+                              value={`${sku.sku} - ${sku.name}`}
+                              onSelect={(currentValue) => {
+                                setOnosSkuValue(currentValue);
+                                setOnosSkuComboboxOpen(false);
+                              }}
+                            >
+                              <Check
+                                className={cn(
+                                  'mr-2 h-4 w-4',
+                                  onosSkuValue.split('-')[0]?.trim() === sku.sku ? 'opacity-100' : 'opacity-0',
+                                )}
+                              />
+                              {`${sku.sku} - ${sku.name} (${sku.weight}g - ${sku.width} - ${sku.height} - ${sku.length})`}
+                            </CommandItem>
+                          ))}
+                        </CommandGroup>
+                      </CommandUI>
+                    </PopoverContent>
+                  </Popover>
+                </div>
+                <PackageDialog
+                  open={isPackageDialogOpen}
+                  onOpenChange={setIsPackageDialogOpen}
+                  onosSkus={onosSkus}
+                  onosSkuValue={onosSkuValue}
+                  onOnosSkuChange={setOnosSkuValue}
+                  onSubmit={handleBulkCreateShipment}
+                  isLoading={isBulkShipmentLoading}
+                  trigger={
+                    <Button
+                      className="rounded-[5px] border bg-green-500 p-2 text-base text-white hover:bg-green-700 hover:text-white disabled:opacity-60"
+                      disabled={!onosSkuValue}
+                    >
+                      Package
+                    </Button>
+                  }
+                  title={`Package ${selectedOrders.length} Order${selectedOrders.length > 1 ? 's' : ''}`}
+                />
+                <div className="text-sm text-gray-600">
+                  {selectedOrders.length} order{selectedOrders.length > 1 ? 's' : ''} selected
+                </div>
+              </div>
+            )}
+            {showAssignDesignerUI && (
+              <div className="flex items-center gap-4">
+                <div className="flex-1">
+                  <Select value={selectedDesignerEmail} onValueChange={setSelectedDesignerEmail}>
+                    <SelectTrigger className="w-full">
+                      <SelectValue placeholder="Select Designer..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {DESIGNER_EMAILS.map((email) => (
+                        <SelectItem key={`designer-${email}`} value={email}>
+                          {email}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <Button
+                  className="rounded-[5px] border bg-blue-500 p-2 text-base text-white hover:bg-blue-700 hover:text-white disabled:opacity-60"
+                  onClick={handleAssignDesigner}
+                  disabled={!selectedDesignerEmail || isAssignDesignerLoading}
+                >
+                  {isAssignDesignerLoading ? 'Assigning...' : 'Assign Designer'}
+                </Button>
+                {!showBulkShipmentUI && (
+                  <div className="text-sm text-gray-600">
+                    {selectedOrders.length} order{selectedOrders.length > 1 ? 's' : ''} selected
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        )}
         <div className="rounded-md border">
           <Table>
             <TableHeader>
@@ -743,6 +1019,58 @@ function OrdersTable({
               </Button>
             </DialogFooter>
           </Form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Results Dialog */}
+      <Dialog open={isResultsDialogOpen} onOpenChange={setIsResultsDialogOpen}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Assignment Results</DialogTitle>
+          </DialogHeader>
+          <div className="max-h-[500px] overflow-y-auto py-4">
+            {assignDesignerResults && assignDesignerResults.length > 0 ? (
+              <div className="space-y-2">
+                {assignDesignerResults.map((result, index) => (
+                  <div
+                    key={index}
+                    className={`rounded-md border p-3 ${
+                      result.success ? 'border-green-200 bg-green-50' : 'border-red-200 bg-red-50'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between">
+                      <div className="flex-1">
+                        <p className={`font-semibold ${result.success ? 'text-green-800' : 'text-red-800'}`}>
+                          {result.externalId}
+                        </p>
+                        <p className={`text-sm ${result.success ? 'text-green-600' : 'text-red-600'}`}>
+                          {result.message}
+                        </p>
+                      </div>
+                      {result.success ? (
+                        <Check className="h-5 w-5 text-green-600" />
+                      ) : (
+                        <AlertCircle className="h-5 w-5 text-red-600" />
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-gray-500">No results available</p>
+            )}
+          </div>
+          <DialogFooter>
+            <Button
+              className="rounded-[3px] bg-blue-500 px-3 py-2 text-white hover:bg-blue-600"
+              onClick={() => {
+                setIsResultsDialogOpen(false);
+                setAssignDesignerResults(null);
+              }}
+            >
+              Close
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </>

@@ -130,6 +130,7 @@ const Orders: React.FC<OrdersProps> = (props) => {
   const [pagination, setPagination] = useState<PaginationState>({ pageIndex: 1, pageSize: 20 });
   const [searchValue, setSearchValue] = useState('');
   const [email, setEmail] = useState('');
+  const [designerEmail, setDesignerEmail] = useState('');
   const [isParamLoaded, setIsParamLoaded] = useState(false);
   const [statusParamUrl, setStatusParamUrl] = useState('');
   const [paramUrl, setParamUrl] = useState<ParamUrl[]>([]);
@@ -593,7 +594,14 @@ const Orders: React.FC<OrdersProps> = (props) => {
     const to = filterDate.split(' - ')[1] || from;
 
     const store = selectedStore === 'all' ? '' : selectedStore;
-    const statisticsResponse = await orderService.getStatistics(from, to, store, email, selectedProductId);
+    const statisticsResponse = await orderService.getStatistics(
+      from,
+      to,
+      store,
+      email,
+      selectedProductId,
+      designerEmail || '',
+    );
     if (!statisticsResponse.success || !statisticsResponse.data) {
       toast.error(statisticsResponse.message);
 
@@ -621,6 +629,7 @@ const Orders: React.FC<OrdersProps> = (props) => {
         productParamUrl,
         store,
         ordersState.filterDate,
+        designerEmail || '',
       );
 
       if (!orderResponse.success || !orderResponse.data) {
@@ -658,12 +667,13 @@ const Orders: React.FC<OrdersProps> = (props) => {
     selectedStore,
     ordersState.filterDate,
     isParamLoaded,
+    designerEmail,
   ]);
 
   useEffect(() => {
     // if (([RoleType.ADMIN, RoleType.MANAGER, RoleType.SELLER] as string[]).includes(user?.role || ''))
     fetchStatistics(ordersState.filterDate);
-  }, [selectedStore, email, ordersState.filterDate, selectedProductId]);
+  }, [selectedStore, email, ordersState.filterDate, selectedProductId, designerEmail]);
 
   useEffect(() => {
     onScan.attachTo(document, {
@@ -839,6 +849,9 @@ const Orders: React.FC<OrdersProps> = (props) => {
                     resetCheckBox={resetCheckBox}
                     setResetCheckbox={setResetCheckbox}
                     handleSelectAllOrders={handleSelectAllOrders}
+                    selectedOrders={selectedOrders}
+                    designerEmail={designerEmail}
+                    onDesignerEmailChange={setDesignerEmail}
                   />
                 </div>
               </div>

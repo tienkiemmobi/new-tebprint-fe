@@ -25,8 +25,9 @@ const getOrders = async (
   productParamUrl?: string,
   myStore?: string,
   pickedDate?: string,
+  designerEmail?: string,
 ): Promise<OrdersResponse> => {
-  console.log("🚀 ~ param:", param)
+  console.log('🚀 ~ param:', param);
   try {
     if (
       !param ||
@@ -73,6 +74,10 @@ const getOrders = async (
       `to=${dateRangeObject.to}`,
     ];
 
+    if (designerEmail) {
+      queryParams.push(`designerEmail=${designerEmail}`);
+    }
+
     const apiUrlWithParams = `/orders?${queryParams.join('&')}`;
 
     const { data } = await CustomAxios.get<OrdersResponse>(apiUrlWithParams);
@@ -88,6 +93,7 @@ const getStatistics = async (
   storeCode?: string,
   email?: string,
   productId?: string,
+  designerEmail?: string,
 ): Promise<OrderStatisticResponse> => {
   try {
     // @ts-expect-error ts(2345)
@@ -97,6 +103,7 @@ const getStatistics = async (
       storeCode,
       email,
       productId,
+      designerEmail,
     });
 
     // eslint-disable-next-line no-restricted-syntax
@@ -385,6 +392,41 @@ const createShipmentOrder = async (
   }
 };
 
+const bulkCreateShipment = async (
+  orderIds: string[],
+  createShipmentDto: {
+    onosProductId: string;
+    onosProductSku: string;
+    onosProductName: string;
+    weight: number;
+    width: number;
+    height: number;
+    length: number;
+    skipAddressCheck: boolean;
+    service: string;
+    scan?: boolean;
+  },
+): Promise<Response> => {
+  try {
+    const { data } = await CustomAxios.post<Response>(
+      `/orders/bulk-create-shipment`,
+      JSON.stringify({
+        orderIds,
+        ...createShipmentDto,
+      }),
+      {
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      },
+    );
+
+    return data;
+  } catch (error) {
+    return handleAxiosError(error);
+  }
+};
+
 export const updateShippingAddress = async (
   orderId: string,
   shippingAddress: ShippingAddressDto,
@@ -478,6 +520,34 @@ export const sendToProvider = async (
   }
 };
 
+export const assignDesigner = async (
+  orderIds: string[],
+  designerEmail: string,
+): Promise<
+  Response & { data?: { success: boolean; results: { externalId: string; success: boolean; message: string }[] } }
+> => {
+  try {
+    const { data } = await CustomAxios.post<
+      Response & { data?: { success: boolean; results: { externalId: string; success: boolean; message: string }[] } }
+    >(
+      `/orders/assign-designer`,
+      {
+        orderIds,
+        designerEmail,
+      },
+      {
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      },
+    );
+
+    return data;
+  } catch (error) {
+    return handleAxiosError(error);
+  }
+};
+
 export const orderService = {
   getOrders,
   getOrderById,
@@ -501,9 +571,11 @@ export const orderService = {
   updateStatus,
   getOnosProducts,
   createShipmentOrder,
+  bulkCreateShipment,
   printLabel,
   updateShippingAddress,
   setLineItemProduced,
   deleteOrder,
   sendToProvider,
+  assignDesigner,
 };

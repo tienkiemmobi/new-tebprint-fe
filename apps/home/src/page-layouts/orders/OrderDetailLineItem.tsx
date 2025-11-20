@@ -45,12 +45,12 @@ const resolveImageSrc = (image: unknown) => {
     return NO_IMAGE;
   }
 
-  if ('url' in image && typeof (image as { url?: string }).url === 'string') {
-    return (image as { url: string }).url;
-  }
-
   if ('preview' in image && typeof (image as { preview?: string }).preview === 'string') {
     return (image as { preview: string }).preview;
+  }
+
+  if ('url' in image && typeof (image as { url?: string }).url === 'string') {
+    return (image as { url: string }).url;
   }
 
   return NO_IMAGE;
@@ -127,6 +127,7 @@ const OrderDetailLineItem = ({
   }, []);
 
   const frontArtworkSrc = resolveImageSrc(lineItem.frontArtwork);
+  const origFrontArtworkSrc = lineItem.frontArtwork?.url || NO_IMAGE;
   const backArtworkSrc = resolveImageSrc(lineItem.backArtwork);
 
   return (
@@ -162,11 +163,7 @@ const OrderDetailLineItem = ({
               <div className="mb-3 flex items-start gap-2">
                 <p className="flex-1 text-sm">
                   Seller Note:{' '}
-                  {lineItem.sellerNote ? (
-                    lineItem.sellerNote
-                  ) : (
-                    <span className="text-[#949494]">No seller note</span>
-                  )}
+                  {lineItem.sellerNote ? lineItem.sellerNote : <span className="text-[#949494]">No seller note</span>}
                 </p>
                 {([RoleType.ADMIN, RoleType.SELLER] as string[]).includes(user?.role || '') && (
                   <button
@@ -187,11 +184,7 @@ const OrderDetailLineItem = ({
               <div className="mb-3 flex items-start gap-2">
                 <p className="flex-1 text-sm">
                   System Note:{' '}
-                  {lineItem.systemNote ? (
-                    lineItem.systemNote
-                  ) : (
-                    <span className="text-[#949494]">No system note</span>
-                  )}
+                  {lineItem.systemNote ? lineItem.systemNote : <span className="text-[#949494]">No system note</span>}
                 </p>
                 {([RoleType.ADMIN, RoleType.MANAGER] as string[]).includes(user?.role || '') && (
                   <button
@@ -214,12 +207,7 @@ const OrderDetailLineItem = ({
                 {lineItem.externalFileLinks.length > 0 ? (
                   lineItem.externalFileLinks.map((file) => (
                     <p key={file.url}>
-                      <a
-                        href={file.url}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="text-sm text-[green] underline"
-                      >
+                      <a href={file.url} target="_blank" rel="noreferrer" className="text-sm text-[green] underline">
                         {file.fileName ?? file.url}
                       </a>
                     </p>
@@ -241,18 +229,22 @@ const OrderDetailLineItem = ({
                     <img
                       ref={frontArtworkRef}
                       src={frontArtworkSrc}
-                      alt={lineItem.product?.title ? `${lineItem.product.title} front artwork` : 'Front artwork preview'}
+                      alt={
+                        lineItem.product?.title ? `${lineItem.product.title} front artwork` : 'Front artwork preview'
+                      }
                       className="max-h-[400px] w-full object-contain"
                     />
                   </QuickPinchZoom>
                   <button
                     onClick={() =>
                       setFullScreenImage({
-                        src: frontArtworkSrc,
-                        alt: lineItem.product?.title ? `${lineItem.product.title} front artwork` : 'Front artwork preview',
+                        src: origFrontArtworkSrc,
+                        alt: lineItem.product?.title
+                          ? `${lineItem.product.title} front artwork`
+                          : 'Front artwork preview',
                       })
                     }
-                    className="absolute right-2 top-2 flex h-8 w-8 items-center justify-center rounded-full bg-white/90 shadow-lg transition-all hover:bg-white hover:scale-110"
+                    className="absolute right-2 top-2 flex h-8 w-8 items-center justify-center rounded-full bg-white/90 shadow-lg transition-all hover:scale-110 hover:bg-white"
                     title="View full screen"
                   >
                     <ZoomIn className="h-4 w-4 text-gray-700" />
@@ -274,9 +266,7 @@ const OrderDetailLineItem = ({
                         ref={backArtworkRef}
                         src={backArtworkSrc}
                         alt={
-                          lineItem.product?.title
-                            ? `${lineItem.product.title} back artwork`
-                            : 'Back artwork preview'
+                          lineItem.product?.title ? `${lineItem.product.title} back artwork` : 'Back artwork preview'
                         }
                         className="max-h-[480px] w-full object-contain"
                       />
@@ -290,7 +280,7 @@ const OrderDetailLineItem = ({
                             : 'Back artwork preview',
                         })
                       }
-                      className="absolute right-2 top-2 flex h-8 w-8 items-center justify-center rounded-full bg-white/90 shadow-lg transition-all hover:bg-white hover:scale-110"
+                      className="absolute right-2 top-2 flex h-8 w-8 items-center justify-center rounded-full bg-white/90 shadow-lg transition-all hover:scale-110 hover:bg-white"
                       title="View full screen"
                     >
                       <ZoomIn className="h-4 w-4 text-gray-700" />
@@ -489,7 +479,7 @@ const OrderDetailLineItem = ({
         >
           <button
             onClick={() => setFullScreenImage(null)}
-            className="absolute right-4 top-4 z-10 flex h-10 w-10 items-center justify-center rounded-full bg-white/10 text-white transition-all hover:bg-white/20 hover:scale-110"
+            className="absolute right-4 top-4 z-10 flex h-10 w-10 items-center justify-center rounded-full bg-white/10 text-white transition-all hover:scale-110 hover:bg-white/20"
             title="Close"
           >
             <X className="h-6 w-6" />
@@ -502,7 +492,7 @@ const OrderDetailLineItem = ({
             <img
               src={fullScreenImage.src}
               alt={fullScreenImage.alt}
-              className="max-h-full max-w-full object-contain"
+              className="max-h-[90vh] max-w-[90vw] object-contain"
               style={{ boxShadow: '0 20px 60px rgba(170, 153, 153, 0.5)' }}
             />
           </div>
