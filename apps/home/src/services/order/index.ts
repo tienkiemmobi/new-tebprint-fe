@@ -548,6 +548,22 @@ export const assignDesigner = async (
   }
 };
 
+export const vectorTrace = async (
+  orderId: string,
+  imageId: string,
+  imageUrl: string,
+): Promise<Response & { data?: { svgContent: string; imageWidth: number; imageHeight: number; scale: number } }> => {
+  try {
+    const { data } = await CustomAxios.post<
+      Response & { data?: { svgContent: string; imageWidth: number; imageHeight: number; scale: number } }
+    >(`/orders/${orderId}/vector-trace?imageId=${encodeURIComponent(imageId)}&imageUrl=${encodeURIComponent(imageUrl)}`);
+
+    return data;
+  } catch (error) {
+    return handleAxiosError(error);
+  }
+};
+
 export const orderService = {
   getOrders,
   getOrderById,
@@ -578,4 +594,5 @@ export const orderService = {
   deleteOrder,
   sendToProvider,
   assignDesigner,
+  vectorTrace,
 };

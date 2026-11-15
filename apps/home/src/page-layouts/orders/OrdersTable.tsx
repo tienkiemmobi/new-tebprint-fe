@@ -126,7 +126,7 @@ const OrderStatusName: Record<string, OrderStatus> = {
   cancelled: { name: 'Cancelled', color: '#FF5733' },
   refunded: { name: 'Refunded', color: '#ADD8E6' },
   // returned: { name: 'Returned', color: '#8B0000' },
-  artwork_error: { name: 'Artwork error', color: 'red' },
+  artwork_error: { name: 'Issued', color: 'red' },
 };
 
 function OrdersTable({
@@ -178,7 +178,19 @@ function OrdersTable({
   >(null);
   const [isResultsDialogOpen, setIsResultsDialogOpen] = useState(false);
 
-  const DESIGNER_EMAILS = ['design1@tebprint.com', 'design2@tebprint.com', 'design3@tebprint.com'];
+  // Bulk shipment results states
+  const [shipmentResults, setShipmentResults] = useState<
+    { externalId: string; success: boolean; message: string }[] | null
+  >(null);
+  const [isShipmentResultsDialogOpen, setIsShipmentResultsDialogOpen] = useState(false);
+
+  const DESIGNER_EMAILS = [
+    'design1@tebprint.com',
+    'design2@tebprint.com',
+    'design3@tebprint.com',
+    'design4@tebprint.com',
+    'design5@tebprint.com',
+  ];
 
   const updateStatusForm = useForm({
     resolver: zodResolver(z.object({ status: z.string() })),
@@ -658,12 +670,34 @@ function OrdersTable({
         scan: packageData.scan,
       });
 
-      if (response.success) {
-        toast.success(`Bulk shipment created for ${selectedOrders.length} order(s)`);
+      if (response.success && response.data) {
+        // Transform the response data to match the results format
+        const results = Array.isArray(response.data)
+          ? response.data.map((item: { orderId: string; message: string }) => {
+              // Find the order to get externalId
+              const order = data.find((o) => o._id === item.orderId);
+              return {
+                externalId: order?.externalId || item.orderId,
+                success: item.message === 'success',
+                message: item.message === 'success' ? 'Shipment created successfully' : item.message,
+              };
+            })
+          : [];
+
+        if (results.length > 0) {
+          setShipmentResults(results);
+          setIsShipmentResultsDialogOpen(true);
+        } else {
+          toast.success(`Bulk shipment created for ${selectedOrders.length} order(s)`);
+        }
         setIsPackageDialogOpen(false);
         setOnosSkuValue('');
-        // Clear selections
-        handleSelectAllOrders(false);
+
+        // Clear selections after successful shipment creation
+        const hasAnySuccess = results.some((r) => r.success);
+        if (hasAnySuccess) {
+          handleSelectAllOrders(false);
+        }
       } else {
         toast.error(response.message || 'Failed to create bulk shipment');
       }
@@ -1066,6 +1100,58 @@ function OrdersTable({
               onClick={() => {
                 setIsResultsDialogOpen(false);
                 setAssignDesignerResults(null);
+              }}
+            >
+              Close
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Shipment Results Dialog */}
+      <Dialog open={isShipmentResultsDialogOpen} onOpenChange={setIsShipmentResultsDialogOpen}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Shipment Creation Results</DialogTitle>
+          </DialogHeader>
+          <div className="max-h-[500px] overflow-y-auto py-4">
+            {shipmentResults && shipmentResults.length > 0 ? (
+              <div className="space-y-2">
+                {shipmentResults.map((result, index) => (
+                  <div
+                    key={index}
+                    className={`rounded-md border p-3 ${
+                      result.success ? 'border-green-200 bg-green-50' : 'border-red-200 bg-red-50'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between">
+                      <div className="flex-1">
+                        <p className={`font-semibold ${result.success ? 'text-green-800' : 'text-red-800'}`}>
+                          {result.externalId}
+                        </p>
+                        <p className={`text-sm ${result.success ? 'text-green-600' : 'text-red-600'}`}>
+                          {result.message}
+                        </p>
+                      </div>
+                      {result.success ? (
+                        <Check className="h-5 w-5 text-green-600" />
+                      ) : (
+                        <AlertCircle className="h-5 w-5 text-red-600" />
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-gray-500">No results available</p>
+            )}
+          </div>
+          <DialogFooter>
+            <Button
+              className="rounded-[3px] bg-blue-500 px-3 py-2 text-white hover:bg-blue-600"
+              onClick={() => {
+                setIsShipmentResultsDialogOpen(false);
+                setShipmentResults(null);
               }}
             >
               Close

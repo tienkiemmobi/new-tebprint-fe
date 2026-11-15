@@ -1,6 +1,7 @@
 /* eslint-disable unused-imports/no-unused-vars */
 import { format } from 'date-fns';
-import { CheckCircle2, ChevronDown, ChevronUp, Pencil, X, ZoomIn } from 'lucide-react';
+import saveAs from 'file-saver';
+import { CheckCircle2, ChevronDown, ChevronUp, Download, Pencil, X, ZoomIn } from 'lucide-react';
 import { useCallback, useRef, useState } from 'react';
 import QuickPinchZoom, { make3dTransformValue } from 'react-quick-pinch-zoom';
 import { toast } from 'react-toastify';
@@ -68,6 +69,12 @@ const OrderDetailLineItem = ({
   const dialogUploadArtworkRef = useRef<UploadArtworkDialogRef>(null);
   const dialogUploadMockupRef = useRef<UploadMockUpDialogRef>(null);
 
+  const frontArtworkRef = useRef<HTMLImageElement | null>(null);
+  const backArtworkRef = useRef<HTMLImageElement | null>(null);
+
+  const origFrontArtworkRef = useRef<HTMLImageElement | null>(null);
+  const origBackArtworkRef = useRef<HTMLImageElement | null>(null);
+
   const [currentLineItemId, setCurrentLineItemId] = useState<string | null>(null);
 
   const [shipmentEvent] = useState<ShipmentEvent[]>([]);
@@ -103,8 +110,135 @@ const OrderDetailLineItem = ({
     }));
   };
 
+  const DPI = 300;
+
+  const generateFullSvg = (
+    fileName: string,
+    svgText: string,
+    imagePath: string,
+    imageWidth: number,
+    imageHeight: number,
+    scale: number,
+  ): string => {
+    // Modify the SVG text first
+    // Create a new SVG document with the layout similar to PDF
+
+    const totalWidth = imageWidth * 2 + 100;
+    const totalHeight = imageHeight + 200;
+
+    const inchWidth = Number((totalWidth / DPI).toFixed(5));
+    const inchHeight = Number((totalHeight / DPI).toFixed(5));
+
+    // stroke-width="1pt" vector-effect="non-scaling-stroke" for web browser but in adobe it should be
+    const strokeWidth = Number((1 / (scale * 0.24)).toFixed(5)); // 0.24 = 72 / 300
+
+    let svgPath = svgText.replace(/<svg[^>]*>|<\/svg>/g, '');
+
+    if (!svgPath.includes('stroke-width=')) {
+      svgPath = svgPath.replace('path fill="none"', `path fill="none" stroke-width="${strokeWidth}pt"`);
+    }
+
+    const fullSvg = `
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="${inchWidth}in" height="${inchHeight}in" viewBox="0 0 ${totalWidth} ${totalHeight}" version="1.1">
+
+  <!-- Title -->
+  <text x="800" y="60" font-family="Arial" font-size="40" text-anchor="middle" fill="black">
+    #${fileName.replace(/\.[^.]+$/, '')}
+  </text>
+
+  <!-- Raster image placeholder (in a real implementation, we would embed the image) -->
+  <image style="overflow:visible;" width="${imageWidth}" height="${imageHeight}" xlink:href="${imagePath}"  transform="matrix(1 0 0 1 ${
+    100 + imageWidth
+  } 200)">
+  </image>
+
+   <!-- SVG content (scaled to fit) -->
+  <g transform="translate(60, 200) scale(${scale})">
+    ${svgPath}
+  </g>
+</svg>`;
+
+    return fullSvg;
+  };
+
+  const convertImageUrlToBase64 = async (imageUrl: string): Promise<string> => {
+    try {
+      const response = await fetch(imageUrl);
+      if (!response.ok) {
+        throw new Error(`Failed to fetch image: ${response.statusText}`);
+      }
+      const blob = await response.blob();
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onloadend = () => {
+          resolve(reader.result as string);
+        };
+        reader.onerror = reject;
+        reader.readAsDataURL(blob);
+      });
+    } catch (error) {
+      throw new Error(`Failed to convert image to base64: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
+  };
+
+  const handleDownloadVectorSvg = async (artworkType: 'front' | 'back') => {
+    const artwork = artworkType === 'front' ? lineItem.frontArtwork : lineItem.backArtwork;
+    if (!artwork || !artwork.preview) {
+      toast.error(`No ${artworkType} artwork available`);
+
+      return;
+    }
+
+    const imageId = artwork._id || `${lineItem._id}-${artworkType}`;
+    // get image base64 from the artwork URL
+    const imageSrc = artwork.url || NO_IMAGE;
+    if (!imageSrc || imageSrc === NO_IMAGE) {
+      toast.error(`No image URL available for ${artworkType} artwork`);
+      return;
+    }
+
+    let imageUrl: string;
+    try {
+      imageUrl = await convertImageUrlToBase64(imageSrc);
+      console.log('🚀 ~ handleDownloadVectorSvg ~ imageUrl:', imageUrl);
+    } catch (error) {
+      toast.error(`Failed to convert ${artworkType} image to base64`);
+      console.error('Error converting image to base64:', error);
+      return;
+    }
+
+    try {
+      toast.info('Generating vector trace...');
+      const response = await orderService.vectorTrace(order._id, imageId, imageSrc);
+
+      if (!response.success || !response.data?.svgContent) {
+        toast.error(response.message || 'Failed to generate vector trace');
+
+        return;
+      }
+
+      const data = response.data;
+
+      const resultSvg = generateFullSvg(
+        order.externalId,
+        data.svgContent,
+        imageUrl,
+        data.imageWidth,
+        data.imageHeight,
+        data.scale,
+      );
+
+      const svgBlob = new Blob([resultSvg], { type: 'image/svg+xml' });
+      const fileName = `${order.externalId}-${artworkType}.svg`;
+      saveAs(svgBlob, fileName);
+      toast.success('Vector SVG downloaded successfully');
+    } catch (error) {
+      toast.error('Failed to download vector SVG');
+      console.error('Error downloading vector SVG:', error);
+    }
+  };
+
   // zoom
-  const frontArtworkRef = useRef<HTMLImageElement | null>(null);
   const onFrontArtworkUpdate = useCallback(({ x, y, scale }: { x: number; y: number; scale: number }) => {
     const { current: img } = frontArtworkRef;
 
@@ -115,7 +249,6 @@ const OrderDetailLineItem = ({
     }
   }, []);
 
-  const backArtworkRef = useRef<HTMLImageElement | null>(null);
   const onBackArtworkUpdate = useCallback(({ x, y, scale }: { x: number; y: number; scale: number }) => {
     const { current: img } = backArtworkRef;
 
@@ -129,6 +262,7 @@ const OrderDetailLineItem = ({
   const frontArtworkSrc = resolveImageSrc(lineItem.frontArtwork);
   const origFrontArtworkSrc = lineItem.frontArtwork?.url || NO_IMAGE;
   const backArtworkSrc = resolveImageSrc(lineItem.backArtwork);
+  const origBackArtworkSrc = lineItem.backArtwork?.url || NO_IMAGE;
 
   return (
     <>
@@ -252,6 +386,21 @@ const OrderDetailLineItem = ({
                 </div>
                 <div className="mb-2 mt-6 flex items-center gap-4">
                   <p className="text-base">Front Artwork</p>
+                  {/* load full original image under the hood for the full svg download */}
+                  <img ref={origFrontArtworkRef} className="hidden" src={origFrontArtworkSrc} />
+                  {([RoleType.ADMIN, RoleType.MANAGER, RoleType.WAREHOUSE, RoleType.DESIGNER] as string[]).includes(
+                    user?.role || '',
+                  ) && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleDownloadVectorSvg('front')}
+                      className="flex items-center gap-2"
+                    >
+                      <Download className="h-4 w-4" />
+                      Download Vector SVG
+                    </Button>
+                  )}
                 </div>
               </div>
 
@@ -287,7 +436,22 @@ const OrderDetailLineItem = ({
                     </button>
                   </div>
                   <div className="mb-2 mt-6 flex items-center gap-4">
+                    {/* load full original image under the hood for the full svg download */}
+                    <img ref={origBackArtworkRef} className="hidden" src={origBackArtworkSrc} />
                     <p className="text-base">Back Artwork</p>
+                    {([RoleType.ADMIN, RoleType.MANAGER, RoleType.WAREHOUSE, RoleType.DESIGNER] as string[]).includes(
+                      user?.role || '',
+                    ) && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleDownloadVectorSvg('back')}
+                        className="flex items-center gap-2"
+                      >
+                        <Download className="h-4 w-4" />
+                        Download Vector SVG
+                      </Button>
+                    )}
                   </div>
                 </div>
               )}

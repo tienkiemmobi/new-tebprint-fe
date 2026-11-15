@@ -616,6 +616,7 @@ export function EditProductTable({ isCreateNewProduct, variants, setEditProductS
         isUpdateVariantsDialogOpen={isUpdateVariantsDialogOpen}
         handleUpdateVariants={handleUpdateVariants}
         setIsUpdateVariantsDialogOpen={setIsUpdateVariantsDialogOpen}
+        setEditProductState={setEditProductState}
       ></EditVariantsDialog>
 
       <Dialog open={isUpdatePriceDialogOpen}>

@@ -24,6 +24,6 @@ export const STATUS_ORDERS: StatusDetail[] = [
   { name: 'Cancelled', title: 'cancelled', disabled: false },
   { name: 'Refunded', title: 'refunded', disabled: false },
   // { name: 'Returned', title: 'returned', disabled: false },
-  { name: 'Artwork Error', title: 'artwork_error', disabled: false },
+  { name: 'Issued', title: 'artwork_error', disabled: false },
   { name: 'Delayed 2 Days', title: 'delayed', disabled: true, total: 0 },
 ];

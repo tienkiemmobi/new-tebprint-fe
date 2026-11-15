@@ -1,9 +1,10 @@
-import { XIcon } from 'lucide-react';
-import React from 'react';
+import { PencilIcon, XIcon } from 'lucide-react';
+import React, { useState } from 'react';
 import { DragDropContext, Draggable, Droppable } from 'react-beautiful-dnd';
 import { Button, Dialog, DialogClose, DialogContent, DialogFooter, DialogHeader, DialogTitle, Input } from 'ui';
 
 import type { OptionsMap } from './EditProductTable';
+import type { EditProductState } from './index';
 
 export function EditVariantsDialog({
   optionsMap,
@@ -13,6 +14,7 @@ export function EditVariantsDialog({
   isUpdateVariantsDialogOpen,
   setIsUpdateVariantsDialogOpen,
   handleUpdateVariants,
+  setEditProductState,
 }: {
   optionsMap: OptionsMap;
   setOptionsMap: React.Dispatch<React.SetStateAction<OptionsMap>>;
@@ -21,12 +23,77 @@ export function EditVariantsDialog({
   isUpdateVariantsDialogOpen: boolean;
   setIsUpdateVariantsDialogOpen: React.Dispatch<React.SetStateAction<boolean>>;
   handleUpdateVariants: (event?: React.MouseEvent<HTMLButtonElement, React.MouseEvent>) => void;
+  setEditProductState: React.Dispatch<React.SetStateAction<EditProductState>>;
 }) {
+  const [editingItem, setEditingItem] = useState<{ key: keyof OptionsMap; oldValue: string; newValue: string } | null>(
+    null,
+  );
   const removeOption = (key: keyof OptionsMap, item: string) => {
     setOptionsMap({
       ...optionsMap,
       [key]: optionsMap[key].filter((optionValue) => optionValue !== item),
     });
+  };
+
+  const startEditing = (key: keyof OptionsMap, item: string) => {
+    setEditingItem({ key, oldValue: item, newValue: item });
+  };
+
+  const cancelEditing = () => {
+    setEditingItem(null);
+  };
+
+  const saveRename = () => {
+    if (!editingItem || editingItem.oldValue === editingItem.newValue.trim()) {
+      setEditingItem(null);
+      return;
+    }
+
+    const { key, oldValue, newValue } = editingItem;
+    const trimmedNewValue = newValue.trim();
+
+    if (!trimmedNewValue || trimmedNewValue === oldValue) {
+      setEditingItem(null);
+      return;
+    }
+
+    // Check if new value already exists
+    if (optionsMap[key].includes(trimmedNewValue)) {
+      setEditingItem(null);
+      return;
+    }
+
+    // Update optionsMap
+    setOptionsMap({
+      ...optionsMap,
+      [key]: optionsMap[key].map((optionValue) => (optionValue === oldValue ? trimmedNewValue : optionValue)),
+    });
+
+    // Update all variants that use the old value
+    setEditProductState((prev: EditProductState) => {
+      return {
+        ...prev,
+        variants: prev.variants
+          .map((variant) => {
+            if (variant[key] === oldValue) {
+              const updatedVariant = {
+                ...variant,
+                [key]: trimmedNewValue,
+                isEdited: true,
+              };
+              return updatedVariant;
+            }
+            return variant;
+          })
+          .sort((a: any, b: any) => {
+            const sizeA = parseInt(a.size, 10);
+            const sizeB = parseInt(b.size, 10);
+            return sizeA - sizeB;
+          }),
+      };
+    });
+
+    setEditingItem(null);
   };
 
   const onDragPropertyEnd = (result: any) => {
@@ -116,26 +183,74 @@ export function EditVariantsDialog({
                                       ref={optionDropProvided.innerRef}
                                       className="space-y-4"
                                     >
-                                      {optionsMap[key as keyof OptionsMap].map((item, optionIndex) => (
-                                        <Draggable key={item} draggableId={item} index={optionIndex}>
-                                          {(optionDragProvided: any) => (
-                                            <li
-                                              ref={optionDragProvided.innerRef}
-                                              {...optionDragProvided.draggableProps}
-                                              {...optionDragProvided.dragHandleProps}
-                                              className="flex items-center justify-between rounded bg-gray-100 p-2"
-                                            >
-                                              <span>{item}</span>
-                                              <button
-                                                className="text-gray-400 hover:text-gray-600"
-                                                onClick={() => removeOption(key as keyof OptionsMap, item)}
+                                      {optionsMap[key as keyof OptionsMap].map((item, optionIndex) => {
+                                        const isEditing = editingItem?.key === key && editingItem?.oldValue === item;
+                                        return (
+                                          <Draggable key={item} draggableId={item} index={optionIndex}>
+                                            {(optionDragProvided: any) => (
+                                              <li
+                                                ref={optionDragProvided.innerRef}
+                                                {...optionDragProvided.draggableProps}
+                                                {...optionDragProvided.dragHandleProps}
+                                                className="flex items-center justify-between rounded bg-gray-100 p-2"
                                               >
-                                                <XIcon />
-                                              </button>
-                                            </li>
-                                          )}
-                                        </Draggable>
-                                      ))}
+                                                {isEditing ? (
+                                                  <>
+                                                    <Input
+                                                      value={editingItem.newValue}
+                                                      onChange={(e) =>
+                                                        setEditingItem({
+                                                          ...editingItem,
+                                                          newValue: e.target.value,
+                                                        })
+                                                      }
+                                                      onBlur={saveRename}
+                                                      onKeyDown={(e) => {
+                                                        if (e.key === 'Enter') {
+                                                          saveRename();
+                                                        } else if (e.key === 'Escape') {
+                                                          cancelEditing();
+                                                        }
+                                                      }}
+                                                      autoFocus
+                                                      className="mr-2 flex-1"
+                                                      onClick={(e) => e.stopPropagation()}
+                                                    />
+                                                  </>
+                                                ) : (
+                                                  <span>{item}</span>
+                                                )}
+                                                <div className="flex items-center gap-2">
+                                                  {!isEditing && (
+                                                    <button
+                                                      className="text-gray-400 hover:text-gray-600"
+                                                      onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        startEditing(key as keyof OptionsMap, item);
+                                                      }}
+                                                    >
+                                                      <PencilIcon className="h-4 w-4" />
+                                                    </button>
+                                                  )}
+                                                  <button
+                                                    className="text-gray-400 hover:text-gray-600"
+                                                    onClick={(e) => {
+                                                      e.stopPropagation();
+                                                      if (isEditing) {
+                                                        cancelEditing();
+                                                      } else {
+                                                        removeOption(key as keyof OptionsMap, item);
+                                                      }
+                                                    }}
+                                                  >
+                                                    <XIcon />
+                                                  </button>
+                                                </div>
+                                              </li>
+                                            )}
+                                          </Draggable>
+                                        );
+                                      })}
                                       {optionDropProvided.placeholder}
                                     </ul>
                                   )}

@@ -371,7 +371,11 @@ const EditProduct = ({ paramId = '' }: EditProductProps) => {
           originalVariant.baseCost !== variant.baseCost ||
           originalVariant.quantity !== variant.quantity ||
           originalVariant.status !== variant.status ||
-          originalVariant.sku !== variant.sku
+          originalVariant.sku !== variant.sku ||
+          // rename property name
+          originalVariant.color !== variant.color ||
+          originalVariant.size !== variant.size ||
+          originalVariant.style !== variant.style
         ) {
           // @ts-ignore
           variant.isEdited = true;
