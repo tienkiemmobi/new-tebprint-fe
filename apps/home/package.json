@@ -56,7 +56,7 @@
     "@astrojs/node": "^6.0.4",
     "@astrojs/prefetch": "^0.4.0",
     "@astrojs/react": "^3.0.4",
-    "@astrojs/sitemap": "^3.0.0",
+    "@astrojs/sitemap": "3.2.1",
     "@astrojs/tailwind": "^5.0.2",
     "@astrojs/vercel": "^5.2.0",
     "@faker-js/faker": "^8.2.0",
